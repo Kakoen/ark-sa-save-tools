@@ -79,7 +79,7 @@ public class ArkProperty<T> {
 				}
 			case "StructProperty":
 				String structType = byteBuffer.readName();
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), readStructProperty(byteBuffer, dataSize, structType, false));
+				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), readStructProperty(byteBuffer, dataSize, structType, inArray));
 			case "ObjectProperty":
 				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), readObjectProperty(byteBuffer));
 			case "SoftObjectProperty":
@@ -91,10 +91,17 @@ public class ArkProperty<T> {
 				int bufferPosition = byteBuffer.getPosition();
 				if (arrayType.equals("StructProperty")) {
 					try {
-						List<ArkProperty<?>> structArray = readStructArray(byteBuffer, arrayType, arrayLength);
-						if (byteBuffer.getPosition() != bufferPosition + dataSize - 4) {
-							log.error("Struct array read incorrectly, position doesn't match size: {}", structArray);
-							throw new Exception("Struct array read incorrectly, position doesn't match size (reading as binary data instead)");
+						List<Object> structArray = readStructArray(byteBuffer, arrayType, arrayLength);
+						int bytesLeft = bufferPosition + dataSize - 4 - byteBuffer.getPosition();
+						if (bytesLeft != 0) {
+							log.error("Struct array read incorrectly, bytes left to read {}: {}", bytesLeft, structArray);
+							if (bytesLeft > 0) {
+								byte[] bytesNotRead = byteBuffer.readBytes(bytesLeft);
+								ArkBinaryData binaryData = new ArkBinaryData(bytesNotRead, byteBuffer.getNames());
+								log.error("Data that was not read: " + binaryData.readBytesAsHex(bytesLeft));
+								binaryData.findNames();
+							}
+							throw new Exception(String.format("Struct array read incorrectly, bytes left: %d (reading as binary data instead)", bytesLeft));
 						}
 						return new ArrayProperty<>(key, type, position, endOfStruct, arrayType, arrayLength, structArray, null);
 					} catch(Exception e) {
@@ -110,10 +117,17 @@ public class ArkProperty<T> {
 		}
 	}
 
-	private static List<ArkProperty<?>> readStructArray(ArkBinaryData byteBuffer, String arrayType, int count) {
-		List<ArkProperty<?>> structArray = new ArrayList<>();
+	private static List<Object> readStructArray(ArkBinaryData byteBuffer, String arrayType, int count) {
+		List<Object> structArray = new ArrayList<>();
+		String name = byteBuffer.readName();
+		String type = byteBuffer.readName();
+		int dataSize = byteBuffer.readInt();
+		int position = byteBuffer.readInt();
+		String structType = byteBuffer.readName();
+		byte unknownByte = byteBuffer.readByte();
+		byteBuffer.skipBytes(16);
 		for (int i = 0; i < count; i++) {
-			structArray.add(readProperty(byteBuffer, true));
+			structArray.add(readStructProperty(byteBuffer, dataSize, arrayType, true));
 		}
 		return structArray;
 	}
@@ -128,9 +142,9 @@ public class ArkProperty<T> {
 	}
 
 	private static Object readStructProperty(ArkBinaryData byteBuffer, int dataSize, String structType, boolean inArray) {
-		if (!inArray) {
+		if (!inArray)
 			byteBuffer.skipBytes(16);
-		}
+
 		if (structType.equals("Vector")) {
 			return new ArkVector(byteBuffer);
 		} else if (structType.equals("Quat")) {

@@ -1,5 +1,6 @@
 package net.kakoen.arksa.savetools;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.ByteBuffer;
@@ -13,6 +14,8 @@ import static net.kakoen.arksa.savetools.ArkSaSaveDatabase.byteArrayToUUID;
 public class ArkBinaryData {
 
 	ByteBuffer byteBuffer;
+
+	@Getter
 	private Map<Integer, String> names;
 
 	public ArkBinaryData(byte[] data) {
@@ -172,4 +175,5 @@ public class ArkBinaryData {
 	public int readUInt16() {
 		return Short.toUnsignedInt(readShort());
 	}
+
 }
