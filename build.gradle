@@ -1,5 +1,6 @@
 plugins {
-    id 'java'
+    id 'java-library'
+    id 'maven-publish'
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
@@ -11,6 +12,8 @@ repositories {
 }
 
 java {
+    withSourcesJar()
+
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
@@ -51,3 +54,39 @@ shadowJar {
     from 'simplelogger.properties'
     archiveFileName.set("${project.name}.jar")
 }
+
+/** Publish start **/
+project.publishing.repositories {
+    maven {
+        url "https://nexus.kakoen.net/repository/maven-" + (version.contains("SNAPSHOT") ? 'snapshots' : 'releases')
+    }
+}
+
+publishing.publications {
+    mavenJava(MavenPublication) {
+        from components.java
+    }
+}
+
+project.gradle.taskGraph.whenReady {
+
+    if(project.gradle.taskGraph.hasTask(":publish")) {
+        if(!project.hasProperty('nexusUser')) {
+            project.ext.nexusUser = System.console()?.readLine("\nPlease provide your username for publishing to nexus: ")
+        } else {
+            println "Username for nexus: ${project.nexusUser}"
+        }
+
+        if(!project.hasProperty("nexusPassword")) {
+            project.ext.nexusPassword = new String(System.console()?.readPassword("\nPlease provide the password for user '${project.nexusUser}' for publishing to nexus: "))
+        } else {
+            println "Password for nexus: ${project.nexusPassword.replaceAll(".", "*")}"
+        }
+
+        project.publishing.repositories.maven.credentials {
+            username project.nexusUser
+            password project.nexusPassword
+        }
+    }
+}
+/** Publish end **/
