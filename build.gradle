@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'net.kakoen.arksa'
+version = '1.0.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+
+dependencies {
+    implementation group: 'org.slf4j', name: 'slf4j-simple', version: '2.0.7'
+
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
+    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
+
+    testCompileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
+    testAnnotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
+
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.43.2.2'
+
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.15.2'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+
+
+}
+
+test {
+    useJUnitPlatform()
+}
+
+//jar {
+//    finalizedBy shadowJar
+//    manifest {
+//        attributes 'Main-Class': 'net.kakoen.arksa.cli.SaveToolsCLI'
+//    }
+//}
+
+shadowJar {
+    from 'simplelogger.properties'
+    archiveFileName.set("${project.name}.jar")
+}
