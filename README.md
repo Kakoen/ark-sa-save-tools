@@ -25,4 +25,7 @@ writer.writeValue(new File("c:\\tmp\\TheIsland_WP.json"), objects);
 
 ## Help?
 
-Join my Discord to find like-minded people. https://discord.gg/by2q2Tqjyr
+My time is limited, so I will not provide extended support using this library. But you
+can join the Discord I created for this project to find like-minded people.
+
+See https://discord.gg/by2q2Tqjyr
