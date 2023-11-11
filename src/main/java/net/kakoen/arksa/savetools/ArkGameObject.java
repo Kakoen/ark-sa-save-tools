@@ -38,8 +38,7 @@ public class ArkGameObject {
 		} catch(Exception e) {
 			ArkSaveUtils.debugLog("Could not parse {}", uuid, e);
 			byteBuffer.setPosition(lastPropertyPosition);
-			byteBuffer.logRestOfDataInHexForm();
-			byteBuffer.findNames();
+			byteBuffer.debugBinaryData(byteBuffer.readBytes(byteBuffer.size() - byteBuffer.getPosition()));
 			throw e;
 		}
 	}

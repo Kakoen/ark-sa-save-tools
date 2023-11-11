@@ -3,6 +3,7 @@ package net.kakoen.arksa.savetools;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -74,7 +75,7 @@ public class ArkBinaryData {
 		return readInt() != 0;
 	}
 
-	public double readFloat() {
+	public float readFloat() {
 		return byteBuffer.getFloat();
 	}
 
@@ -176,4 +177,12 @@ public class ArkBinaryData {
 		return Short.toUnsignedInt(readShort());
 	}
 
+	public void debugBinaryData(byte[] data) {
+		log.error("Data that was not recognized: " + bytesToHex(data));
+		new ArkBinaryData(data, names).findNames();
+	}
+
+	public BigInteger readUInt64() {
+		return new BigInteger(Long.toUnsignedString(byteBuffer.getLong()));
+	}
 }

@@ -19,6 +19,7 @@ public class ArkSaSaveDatabase implements AutoCloseable {
 
     private Map<Integer, String> names;
     private List<String> parts;
+    private final static int MAX_IN_LIST = 10000;
 
     public ArkSaSaveDatabase(File arkFile) throws SQLException {
         this.sqliteDb = arkFile;
@@ -129,6 +130,15 @@ public class ArkSaSaveDatabase implements AutoCloseable {
     public Map<UUID, ArkGameObject> getGameObjectsByIds(Collection<UUID> uuids) throws SQLException {
         if (uuids.isEmpty()) {
             return Collections.emptyMap();
+        }
+
+        if (uuids.size() > MAX_IN_LIST) {
+            Map<UUID, ArkGameObject> gameObjects = new HashMap<>();
+            List<UUID> uuidList = new ArrayList<>(uuids);
+            for (int i = 0; i < uuidList.size(); i += MAX_IN_LIST) {
+                gameObjects.putAll(getGameObjectsByIds(uuidList.subList(i, Math.min(i + MAX_IN_LIST, uuidList.size()))));
+            }
+            return gameObjects;
         }
 
         String placeholders = String.join(",", Collections.nCopies(uuids.size(), "?"));
