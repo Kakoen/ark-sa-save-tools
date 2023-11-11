@@ -17,15 +17,15 @@ public class ArkBinaryData {
 	ByteBuffer byteBuffer;
 
 	@Getter
-	private Map<Integer, String> names;
+	private SaveContext saveContext;
 
 	public ArkBinaryData(byte[] data) {
 		this.byteBuffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
 	}
 
-	public ArkBinaryData(byte[] values, Map<Integer, String> names) {
+	public ArkBinaryData(byte[] values, SaveContext saveContext) {
 		this.byteBuffer = ByteBuffer.wrap(values).order(ByteOrder.LITTLE_ENDIAN);
-		this.names = names;
+		this.saveContext = saveContext;
 	}
 
 	public String readString() {
@@ -54,7 +54,7 @@ public class ArkBinaryData {
 	}
 
 	public void skipBytes(int count) {
-		readBytes(count);
+		setPosition(getPosition() + count);
 	}
 
 	public int readInt() {
@@ -105,33 +105,10 @@ public class ArkBinaryData {
 		log.info("--- Looking for names ---");
 		for(int i = 0; i < size() - 4; i++) {
 			setPosition(i);
-			String n = names.get(readInt());
+			String n = saveContext.getNames().get(readInt());
 			if(n != null) {
 				log.info("Found name: {} at {}", n, i);
 				i += 3;
-			}
-		}
-	}
-
-	public void findNamesAndStrings() {
-		log.info("--- Looking for names and strings ---");
-		for(int i = 0; i < size() - 4; i++) {
-			setPosition(i);
-			String n = readName();
-			if(n != null) {
-				setPosition(i);
-				String bytes = bytesToHex(readBytes(4));
-				log.info("Found name: {} at {} ({})", n, i, bytes);
-			} else {
-				setPosition(i);
-				try {
-					String s = readString();
-					if(s != null) {
-						log.info("Found string: {} at {}", s, i);
-					}
-				} catch(Exception ignored) {
-
-				}
 			}
 		}
 	}
@@ -145,7 +122,7 @@ public class ArkBinaryData {
 	}
 
 	public String readName() {
-		String name = names.get(readInt());
+		String name = saveContext.getNames().get(readInt());
 		int alwaysZero = readInt();
 		if(alwaysZero != 0) {
 			ArkSaveUtils.debugLog("Always zero is not zero: {}", alwaysZero, new Throwable());
@@ -179,10 +156,18 @@ public class ArkBinaryData {
 
 	public void debugBinaryData(byte[] data) {
 		log.error("Data that was not recognized: " + bytesToHex(data));
-		new ArkBinaryData(data, names).findNames();
+		new ArkBinaryData(data, saveContext).findNames();
 	}
 
 	public BigInteger readUInt64() {
 		return new BigInteger(Long.toUnsignedString(byteBuffer.getLong()));
+	}
+
+	public String readSingleName() {
+		return saveContext.getNames().get(readInt());
+	}
+
+	public long readLong() {
+		return byteBuffer.getLong();
 	}
 }

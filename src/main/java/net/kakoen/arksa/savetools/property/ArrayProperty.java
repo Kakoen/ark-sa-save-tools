@@ -1,9 +1,8 @@
-package net.kakoen.arksa.savetools;
+package net.kakoen.arksa.savetools.property;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import java.util.List;
+import net.kakoen.arksa.savetools.property.ArkProperty;
 
 @EqualsAndHashCode(callSuper = false)
 @Data

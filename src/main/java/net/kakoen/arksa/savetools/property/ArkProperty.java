@@ -1,10 +1,11 @@
-package net.kakoen.arksa.savetools;
+package net.kakoen.arksa.savetools.property;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.kakoen.arksa.savetools.ArkBinaryData;
 import net.kakoen.arksa.savetools.struct.*;
 
 import java.util.ArrayList;
@@ -38,7 +39,9 @@ public class ArkProperty<T> {
 	}
 
 	public static ArkProperty<?> readProperty(ArkBinaryData byteBuffer, boolean inArray) {
-		String key = byteBuffer.readName();
+		String key = byteBuffer.readSingleName();
+		int someInt = byteBuffer.readInt();
+
 		if (key == null || key.equals("None")) {
 			return null;
 		}
@@ -51,12 +54,15 @@ public class ArkProperty<T> {
 
 		switch(type) {
 			case "BoolProperty":
-				boolean value = byteBuffer.readShort() != 0;
-				return new ArkProperty<>(key, type, position, (byte)0, value);
+				short value = byteBuffer.readShort();
+				return new ArkProperty<>(key, type, position, (byte)0, value != 0);
 			case "FloatProperty":
 				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readFloat());
 			case "NameProperty":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readName());
+				byte unknownByte = byteBuffer.readByte();
+				String name = byteBuffer.readSingleName();
+				int unknownInt = byteBuffer.readInt();
+				return new ArkProperty<>(key, type, position, unknownByte, name);
 			case "IntProperty":
 				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readInt());
 			case "Int8Property":
@@ -71,6 +77,8 @@ public class ArkProperty<T> {
 				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readUInt16());
 			case "Int16Property":
 				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readShort());
+			case "Int64Property":
+				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readLong());
 			case "StrProperty":
 				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readString());
 			case "ByteProperty":
