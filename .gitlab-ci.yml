@@ -1,0 +1,4 @@
+include:
+    - project: 'domination-gaming/build/standard-pipelines'
+      file:
+          - '/default.gitlab-ci.yml'
