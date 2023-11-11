@@ -12,13 +12,19 @@ See `ArkSaSaveDatabase` for a starting point.
 Example usage (reads all objects with 'Character_BP_C' in their classname, and outputs both binary and json formatted files):
 
 ```java
-ArkSaSaveDatabase arkSaSaveDatabase = new ArkSaSaveDatabase(new File("c:\\tmp\\TheIsland_WP.ark"));
-Map<UUID, ArkGameObject> objects = arkSaSaveDatabase.getGameObjects(GameObjectReaderConfiguration.builder()
-.classNameFilter(name -> name.isPresent() && name.get().contains("Character_BP_C"))
-.binaryFilesOutputDirectory(Path.of("c:\\tmp\\out\\bin"))
-.jsonFilesOutputDirectory(Path.of("c:\\tmp\\out\\json"))
-.build());
-log.info("Found {} objects", objects.size());
+try (ArkSaSaveDatabase arkSaSaveDatabase = new ArkSaSaveDatabase(new File("c:\\tmp\\TheIsland_WP.ark"))) {
+    GameObjectReaderConfiguration readerConfiguration = GameObjectReaderConfiguration.builder()
+            .classNameFilter(name -> name.isPresent() && name.get().contains("Character_BP_C"))
+            .binaryFilesOutputDirectory(Path.of("c:\\tmp\\out\\bin"))
+            .jsonFilesOutputDirectory(Path.of("c:\\tmp\\out\\json"))
+            .build();
+
+    Map<UUID, ArkGameObject> objects = arkSaSaveDatabase.getGameObjects(readerConfiguration);
+    log.info("Found {} objects", objects.size());
+} catch(Exception e) {
+    log.error("Something bad happened!", e);
+    throw new RuntimeException("Failed to read save file", e);
+}
 ```
 
 ## Help?
