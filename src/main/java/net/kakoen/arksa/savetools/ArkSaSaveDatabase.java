@@ -126,20 +126,37 @@ public class ArkSaSaveDatabase implements AutoCloseable {
         }
     }
 
-    public ArkGameObject getGameObjectById(UUID uuid) throws SQLException {
-        String query = "SELECT key, value FROM game WHERE key = ? LIMIT 1";
+    public Map<UUID, ArkGameObject> getGameObjectsByIds(Collection<UUID> uuids) throws SQLException {
+        if (uuids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        String placeholders = String.join(",", Collections.nCopies(uuids.size(), "?"));
+        String query = "SELECT key, value FROM game WHERE key IN (" + placeholders + ")";
+
+        Map<UUID, ArkGameObject> gameObjects = new HashMap<>();
+
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setBytes(1, UUIDToByteArray(uuid));
+            // Set UUID parameters
+            int parameterIndex = 1;
+            for (UUID uuid : uuids) {
+                preparedStatement.setBytes(parameterIndex++, UUIDToByteArray(uuid));
+            }
+
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
+                while (resultSet.next()) {
                     UUID actualUuid = byteArrayToUUID(resultSet.getBytes("key"));
                     ArkBinaryData byteBuffer = new ArkBinaryData(resultSet.getBytes("value"), names);
                     String className = byteBuffer.readName();
-                    return new ArkGameObject(actualUuid, className, byteBuffer);
+                    gameObjects.put(actualUuid, new ArkGameObject(actualUuid, className, byteBuffer));
                 }
             }
         }
-        return null;
+        return gameObjects;
+    }
+
+    public ArkGameObject getGameObjectById(UUID uuid) throws SQLException {
+        return getGameObjectsByIds(Collections.singleton(uuid)).get(uuid);
     }
 
     public static UUID byteArrayToUUID(final byte[] bytes) {
