@@ -35,8 +35,6 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-
-
 }
 
 test {
@@ -54,6 +52,8 @@ shadowJar {
     from 'simplelogger.properties'
     archiveFileName.set("${project.name}.jar")
 }
+
+jar.finalizedBy(shadowJar)
 
 /** Publish start **/
 project.publishing.repositories {
