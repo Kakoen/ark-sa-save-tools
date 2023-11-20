@@ -13,7 +13,7 @@ import java.util.function.Predicate;
 public class GameObjectReaderConfiguration {
 
     private Predicate<UUID> uuidFilter;
-    private Predicate<Optional<String>> classNameFilter;
+    private Predicate<Optional<String>> blueprintNameFilter;
     private Predicate<ArkGameObject> gameObjectFilter;
 
     /**
