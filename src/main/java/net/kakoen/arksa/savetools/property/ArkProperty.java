@@ -6,7 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.kakoen.arksa.savetools.ArkBinaryData;
-import net.kakoen.arksa.savetools.struct.*;
+import net.kakoen.arksa.savetools.struct.ArkStructType;
+import net.kakoen.arksa.savetools.struct.UnknownStruct;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -123,7 +124,7 @@ public class ArkProperty<T> {
 		if (isName) {
 			return byteBuffer.readName();
 		} else {
-			return byteBuffer.readUUID();
+			return byteBuffer.readUUIDAsString();
 		}
 	}
 

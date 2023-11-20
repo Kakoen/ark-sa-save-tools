@@ -3,8 +3,7 @@ package net.kakoen.arksa.savetools;
 import lombok.Data;
 import net.kakoen.arksa.savetools.property.ArkProperty;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Data
 public class ArkPropertyContainer {
@@ -19,7 +18,7 @@ public class ArkPropertyContainer {
         try {
             ArkProperty<?> arkProperty = ArkProperty.readProperty(byteBuffer);
             while (byteBuffer.hasMore()) {
-                getProperties().add(arkProperty);
+                if(arkProperty != null) getProperties().add(arkProperty);
                 ArkSaveUtils.debugLog("Position: " + byteBuffer.byteBuffer.position());
                 lastPropertyPosition = byteBuffer.byteBuffer.position();
                 arkProperty = ArkProperty.readProperty(byteBuffer);
@@ -35,6 +34,47 @@ public class ArkPropertyContainer {
             throw e;
         }
 
+    }
+
+    public boolean hasProperty(String name) {
+        return properties.stream().anyMatch(property -> property.getName().equals(name));
+    }
+
+    public <T> Optional<ArkProperty<T>> findProperty(String name) {
+        return properties
+                .stream()
+                .filter(property -> property.getName().equals(name))
+                .map(property -> (ArkProperty<T>) property).findFirst();
+    }
+
+    public <T> Optional<ArkProperty<T>> findProperty(String name, int position) {
+        return properties
+                .stream()
+                .filter(property -> property.getName().equals(name))
+                .filter(property -> property.getPosition() == position)
+                .map(property -> (ArkProperty<T>) property)
+                .findFirst();
+    }
+
+    public <T> Optional<T> getPropertyValue(String name, Class<T> clazz) {
+        return (Optional<T>)findProperty(name).map(ArkProperty::getValue);
+    }
+
+    public <T> Optional<T> getPropertyValue(String name, int position, Class<T> clazz) {
+        return (Optional<T>)findProperty(name, position).map(ArkProperty::getValue);
+    }
+
+    public <T> List<ArkProperty<T>> getProperties(String name, Class<T> clazz) {
+        return properties
+                .stream()
+                .filter(property -> property.getName().equals(name))
+                .map(property -> (ArkProperty<T>) property)
+                .toList();
+    }
+
+    public <T> Map<Integer, T> getPropertiesByPosition(String name, Class<T> clazz) {
+        return getProperties("name", clazz)
+                .stream().collect(HashMap::new, (m, p) -> m.put(p.getPosition(), p.getValue()), HashMap::putAll);
     }
 
 }

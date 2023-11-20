@@ -25,6 +25,14 @@ public class ArkSaSaveDatabase implements AutoCloseable {
         this.connection = DriverManager.getConnection("jdbc:sqlite:" + arkFile.getAbsolutePath());
         saveContext = new SaveContext();
         readHeader();
+        readActorLocations();
+    }
+
+    private void readActorLocations() throws SQLException {
+        ArkBinaryData actorTransforms = getCustomValue("ActorTransforms");
+        if (actorTransforms != null) {
+            saveContext.setActorLocations(actorTransforms.readActorTransforms());
+        }
     }
 
     private void readHeader() throws SQLException {
@@ -49,7 +57,9 @@ public class ArkSaSaveDatabase implements AutoCloseable {
     }
 
     public Map<UUID, ArkGameObject> getGameObjects(GameObjectReaderConfiguration readerConfiguration) throws SQLException, IOException {
-        try (ResultSet resultSet = connection.createStatement().executeQuery("SELECT key, value FROM game")) {
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("SELECT key, value FROM game")) {
+
             Map<UUID, ArkGameObject> gameObjects = new HashMap<>();
             while (resultSet.next()) {
                 UUID uuid = byteArrayToUUID(resultSet.getBytes("key"));
@@ -93,6 +103,8 @@ public class ArkSaSaveDatabase implements AutoCloseable {
                     throw e;
                 }
             }
+
+
             return gameObjects;
         }
     }
@@ -115,11 +127,14 @@ public class ArkSaSaveDatabase implements AutoCloseable {
     }
 
     public ArkBinaryData getCustomValue(String key) throws SQLException {
-        ResultSet resultSet = connection.createStatement().executeQuery("SELECT value FROM custom WHERE key = '" + key + "' LIMIT 1");
-        if (resultSet.next()) {
-            return new ArkBinaryData(resultSet.getBytes("value"));
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("SELECT value FROM custom WHERE key = '" + key + "' LIMIT 1")) {
+
+            if (resultSet.next()) {
+                return new ArkBinaryData(resultSet.getBytes("value"), saveContext);
+            }
+            return null;
         }
-        return null;
     }
 
     @Override

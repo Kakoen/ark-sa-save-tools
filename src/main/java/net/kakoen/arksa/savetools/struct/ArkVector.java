@@ -1,11 +1,13 @@
 package net.kakoen.arksa.savetools.struct;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import net.kakoen.arksa.savetools.ArkBinaryData;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class ArkVector {
 
 	private double x;
