@@ -73,7 +73,7 @@ public class ArkPropertyContainer {
     }
 
     public <T> Map<Integer, T> getPropertiesByPosition(String name, Class<T> clazz) {
-        return getProperties("name", clazz)
+        return getProperties(name, clazz)
                 .stream().collect(HashMap::new, (m, p) -> m.put(p.getPosition(), p.getValue()), HashMap::putAll);
     }
 
