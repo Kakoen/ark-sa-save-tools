@@ -2,12 +2,17 @@ package net.kakoen.arksa.savetools;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.kakoen.arksa.savetools.struct.ArkVector;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static net.kakoen.arksa.savetools.ArkSaSaveDatabase.byteArrayToUUID;
 
@@ -130,8 +135,12 @@ public class ArkBinaryData {
 		return name;
 	}
 
-	public String readUUID() {
-		return byteArrayToUUID(readBytes(16)).toString();
+	public String readUUIDAsString() {
+		return readUUID().toString();
+	}
+
+	public UUID readUUID() {
+		return byteArrayToUUID(readBytes(16));
 	}
 
 	public short readShort() {
@@ -169,5 +178,17 @@ public class ArkBinaryData {
 
 	public long readLong() {
 		return byteBuffer.getLong();
+	}
+
+	public Map<UUID, ArkVector> readActorTransforms() {
+		Map<UUID, ArkVector> locations = new HashMap<>();
+		UUID terminationUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+		UUID uuid = readUUID();
+		while(!uuid.equals(terminationUUID)) {
+			locations.put(uuid, new ArkVector(readDouble(), readDouble(), readDouble()));
+			skipBytes(32); //unknown bytes
+			uuid = readUUID();
+		}
+		return locations;
 	}
 }
