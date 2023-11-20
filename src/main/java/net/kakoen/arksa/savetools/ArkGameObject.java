@@ -25,9 +25,10 @@ public class ArkGameObject extends ArkPropertyContainer {
 		this.blueprint = blueprint;
 
 		byteBuffer.skipBytes(8);
-		this.name = byteBuffer.readSingleName();
-		this.item = byteBuffer.readBoolean();
 		this.className = byteBuffer.readSingleName();
+		this.item = byteBuffer.readBoolean();
+		this.name = byteBuffer.readSingleName();
+
 		byteBuffer.skipBytes(1);
 
 		readProperties(byteBuffer);

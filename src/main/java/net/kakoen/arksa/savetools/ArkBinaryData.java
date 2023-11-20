@@ -4,14 +4,13 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.kakoen.arksa.savetools.struct.ArkVector;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import static net.kakoen.arksa.savetools.ArkSaSaveDatabase.byteArrayToUUID;
@@ -190,5 +189,11 @@ public class ArkBinaryData {
 			uuid = readUUID();
 		}
 		return locations;
+	}
+
+	public void expect(Object expected, Object read) {
+		if (!Objects.equals(expected, read)) {
+			log.warn("Unexpected data, expected {}, but was {}", expected, read, new Throwable());
+		}
 	}
 }

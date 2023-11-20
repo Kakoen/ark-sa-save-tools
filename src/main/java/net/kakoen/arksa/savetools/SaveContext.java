@@ -14,6 +14,8 @@ public class SaveContext {
     private Map<Integer, String> names;
     private List<String> parts;
     private Map<UUID, ArkVector> actorLocations;
+    private int saveVersion;
+    private double gameTime; // Uncertain...
 
     public Optional<ArkVector> getActorLocation(UUID uuid) {
         return Optional.ofNullable(actorLocations.get(uuid));

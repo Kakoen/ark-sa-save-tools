@@ -17,13 +17,12 @@ public class ArkSaSaveDatabase implements AutoCloseable {
     private final File sqliteDb;
     private final Connection connection;
 
-    private SaveContext saveContext;
+    private final SaveContext saveContext = new SaveContext();
     private final static int MAX_IN_LIST = 10000;
 
     public ArkSaSaveDatabase(File arkFile) throws SQLException {
         this.sqliteDb = arkFile;
         this.connection = DriverManager.getConnection("jdbc:sqlite:" + arkFile.getAbsolutePath());
-        saveContext = new SaveContext();
         readHeader();
         readActorLocations();
     }
@@ -37,23 +36,30 @@ public class ArkSaSaveDatabase implements AutoCloseable {
 
     private void readHeader() throws SQLException {
         ArkBinaryData headerData = getCustomValue("SaveHeader");
-        headerData.skipBytes(18);
-        readParts(headerData);
-        headerData.skipBytes(8);
-        readNames(headerData);
+        saveContext.setSaveVersion(headerData.readShort());
+        int nameTableOffset = headerData.readInt();
+        saveContext.setGameTime(headerData.readDouble());
+
+        saveContext.setParts(readParts(headerData));
+
+        // Unknown data, seems to be always 0...
+        headerData.expect(0, headerData.readInt());
+        headerData.expect(0, headerData.readInt());
+
+        headerData.setPosition(nameTableOffset);
+        saveContext.setNames(readNames(headerData));
     }
 
-    private void readParts(ArkBinaryData headerData) {
+    private List<String> readParts(ArkBinaryData headerData) {
         List<String> parts = new ArrayList<>();
-        while (true) {
+        long numberOfParts = headerData.readUInt32();
+        for (int i = 0; i < numberOfParts; i++) {
             String name = headerData.readString();
-            if (name == null) {
-                break;
-            }
             parts.add(name);
             headerData.readInt();
         }
-        saveContext.setParts(parts);
+
+        return parts;
     }
 
     public Map<UUID, ArkGameObject> getGameObjects(GameObjectReaderConfiguration readerConfiguration) throws SQLException, IOException {
@@ -69,7 +75,7 @@ public class ArkSaSaveDatabase implements AutoCloseable {
 
                 ArkBinaryData byteBuffer = new ArkBinaryData(resultSet.getBytes("value"), saveContext);
                 String className = byteBuffer.readName();
-                if (readerConfiguration.getClassNameFilter() != null && !readerConfiguration.getClassNameFilter().test(Optional.ofNullable(className))) {
+                if (readerConfiguration.getBlueprintNameFilter() != null && !readerConfiguration.getBlueprintNameFilter().test(Optional.ofNullable(className))) {
                     continue;
                 }
 
@@ -116,14 +122,15 @@ public class ArkSaSaveDatabase implements AutoCloseable {
         return Path.of(path);
     }
 
-    private void readNames(ArkBinaryData headerData) {
+    private Map<Integer, String> readNames(ArkBinaryData headerData) {
         Map<Integer, String> names = new HashMap<>();
-        while (headerData.hasMore()) {
+        int numberOfNames = headerData.readInt();
+        for (int i = 0; i < numberOfNames; i++) {
             int id = headerData.readInt();
-            String idName = headerData.readString();
-            names.put(id, idName);
+            String name = headerData.readString();
+            names.put(id, name);
         }
-        saveContext.setNames(names);
+        return names;
     }
 
     public ArkBinaryData getCustomValue(String key) throws SQLException {

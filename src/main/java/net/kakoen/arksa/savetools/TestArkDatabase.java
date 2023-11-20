@@ -13,7 +13,7 @@ public class TestArkDatabase {
     public static void main(String[] args) {
         try (ArkSaSaveDatabase arkSaSaveDatabase = new ArkSaSaveDatabase(new File("c:\\tmp\\TheIsland_WP.ark"))) {
             GameObjectReaderConfiguration readerConfiguration = GameObjectReaderConfiguration.builder()
-                    .classNameFilter(name -> name.isPresent() && name.get().contains("Character_BP_C"))
+                    .blueprintNameFilter(name -> name.isPresent() && name.get().contains("Character_BP_C"))
                     .binaryFilesOutputDirectory(Path.of("c:\\tmp\\out\\bin"))
                     .jsonFilesOutputDirectory(Path.of("c:\\tmp\\out\\json"))
                     .build();
