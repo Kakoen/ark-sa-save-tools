@@ -1,5 +1,6 @@
 package net.kakoen.arksa.savetools;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.kakoen.arksa.savetools.utils.JsonUtils;
 
@@ -17,6 +18,7 @@ public class ArkSaSaveDatabase implements AutoCloseable {
     private final File sqliteDb;
     private final Connection connection;
 
+    @Getter
     private final SaveContext saveContext = new SaveContext();
     private final static int MAX_IN_LIST = 10000;
 
