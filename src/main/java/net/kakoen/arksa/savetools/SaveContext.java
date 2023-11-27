@@ -20,4 +20,8 @@ public class SaveContext {
     public Optional<ActorTransform> getActorTransform(UUID uuid) {
         return Optional.ofNullable(actorTransforms.get(uuid));
     }
+
+    public boolean hasNameTable() {
+        return names != null;
+    }
 }

@@ -7,6 +7,8 @@ This library parses Ark: Survival Ascended world files (*.ark).
 As the code is in an incomplete and unstable state, usage is only recommended for experienced developers.
 The implementation can change drastically at any moment.
 
+### Reading *.ark save files
+
 See `ArkSaSaveDatabase` for a starting point.
 
 Example usage (reads all objects with 'Character_BP_C' in their blueprint path, and outputs both binary and json formatted files):
@@ -24,6 +26,44 @@ try (ArkSaSaveDatabase arkSaSaveDatabase = new ArkSaSaveDatabase(new File("c:\\t
 } catch(Exception e) {
     log.error("Something bad happened!", e);
     throw new RuntimeException("Failed to read save file", e);
+}
+```
+
+### Reading *.arktribe files
+
+See ArkTribe as a starting point
+
+```java
+try {
+    ArkTribe arkTribe = new ArkTribe(path);
+    String tribeName = arkTribe.getTribe()
+            .getPropertyValue("TribeData", ArkPropertyContainer.class)
+            .flatMap(tribeData -> tribeData.getPropertyValue("TribeName", String.class))
+            .orElse(null);
+
+    log.info("Tribe name: {}", tribeName);
+    JsonUtils.writeJsonToFile(arkTribe, Path.of(path.toString().replace(".arktribe", ".json")));
+} catch (Exception e) {
+    log.error("Could not read tribe " + path, e);
+}
+```
+
+### Reading *.arkprofile files
+
+See ArkProfile as a starting point
+
+```java
+try {
+    ArkProfile arkProfile = new ArkProfile(path);
+    String playerName = arkProfile.getProfile()
+            .getPropertyValue("MyData", ArkPropertyContainer.class)
+            .flatMap(myData -> myData.getPropertyValue("PlayerName", String.class))
+            .orElse(null);
+
+    log.info("Player name: {}", playerName);
+    JsonUtils.writeJsonToFile(arkProfile, Path.of(path.toString().replace(".arkprofile", ".json")));
+} catch (Exception e) {
+    log.error("Could not read profile " + path, e);
 }
 ```
 
