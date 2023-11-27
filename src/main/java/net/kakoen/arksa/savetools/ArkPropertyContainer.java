@@ -69,6 +69,10 @@ public class ArkPropertyContainer {
         return (Optional<T>)findProperty(name, position).map(ArkProperty::getValue);
     }
 
+    public <T> Optional<List<T>> getArrayPropertyValue(String name, Class<T> clazz) {
+        return Optional.ofNullable((List<T>)getPropertyValue(name, List.class).orElse(null));
+    }
+
     public <T> List<ArkProperty<T>> getProperties(String name, Class<T> clazz) {
         return properties
                 .stream()
