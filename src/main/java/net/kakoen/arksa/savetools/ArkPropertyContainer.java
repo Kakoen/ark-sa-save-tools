@@ -13,6 +13,10 @@ public class ArkPropertyContainer {
     public ArkPropertyContainer() {
     }
 
+    public ArkPropertyContainer(List<ArkProperty<?>> properties) {
+        this.properties = properties;
+    }
+
     public void readProperties(ArkBinaryData byteBuffer) {
         int lastPropertyPosition = byteBuffer.getPosition();
         try {

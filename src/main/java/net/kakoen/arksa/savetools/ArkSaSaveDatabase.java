@@ -103,12 +103,19 @@ public class ArkSaSaveDatabase implements AutoCloseable {
                         Files.write(binFile, resultSet.getBytes("value"));
                     }
                 } catch (Exception e) {
-                    log.error("Error parsing " + uuid + ", debug info following", e);
+                    log.error("Error parsing " + uuid + " of type " + className + ", debug info following", e);
                     ArkSaveUtils.enableDebugLogging = true;
                     byteBuffer.setPosition(startOfObject);
-                    new ArkGameObject(uuid, className, byteBuffer);
+                    try {
+                        new ArkGameObject(uuid, className, byteBuffer);
+                    } catch (Exception ignored) {
+
+                    }
                     ArkSaveUtils.enableDebugLogging = false;
-                    throw e;
+
+                    if (readerConfiguration.isThrowExceptionOnParseError()) {
+                        throw e;
+                    }
                 }
             }
 
@@ -154,6 +161,10 @@ public class ArkSaSaveDatabase implements AutoCloseable {
     }
 
     public Map<UUID, ArkGameObject> getGameObjectsByIds(Collection<UUID> uuids) throws SQLException {
+        return getGameObjectsByIds(uuids, GameObjectParserConfiguration.builder().build());
+    }
+
+    public Map<UUID, ArkGameObject> getGameObjectsByIds(Collection<UUID> uuids, GameObjectParserConfiguration objectParserConfiguration) throws SQLException {
         if (uuids.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -162,7 +173,7 @@ public class ArkSaSaveDatabase implements AutoCloseable {
             Map<UUID, ArkGameObject> gameObjects = new HashMap<>();
             List<UUID> uuidList = new ArrayList<>(uuids);
             for (int i = 0; i < uuidList.size(); i += MAX_IN_LIST) {
-                gameObjects.putAll(getGameObjectsByIds(uuidList.subList(i, Math.min(i + MAX_IN_LIST, uuidList.size()))));
+                gameObjects.putAll(getGameObjectsByIds(uuidList.subList(i, Math.min(i + MAX_IN_LIST, uuidList.size())), objectParserConfiguration));
             }
             return gameObjects;
         }
@@ -183,8 +194,18 @@ public class ArkSaSaveDatabase implements AutoCloseable {
                 while (resultSet.next()) {
                     UUID actualUuid = byteArrayToUUID(resultSet.getBytes("key"));
                     ArkBinaryData byteBuffer = new ArkBinaryData(resultSet.getBytes("value"), saveContext);
-                    String className = byteBuffer.readName();
-                    gameObjects.put(actualUuid, new ArkGameObject(actualUuid, className, byteBuffer));
+                    try {
+                        String className = byteBuffer.readName();
+                        gameObjects.put(actualUuid, new ArkGameObject(actualUuid, className, byteBuffer));
+                    } catch (Exception e) {
+                        log.error("Failed reading gameObject with UUID {}, skipping...", actualUuid, e);
+                        byteBuffer.setPosition(0);
+                        log.error("Data: {}", byteBuffer.readBytesAsHex(byteBuffer.size()));
+
+                        if(objectParserConfiguration.isThrowExceptionOnParseError()) {
+                            throw e;
+                        }
+                    }
                 }
             }
         }
@@ -192,7 +213,7 @@ public class ArkSaSaveDatabase implements AutoCloseable {
     }
 
     public ArkGameObject getGameObjectById(UUID uuid) throws SQLException {
-        return getGameObjectsByIds(Collections.singleton(uuid)).get(uuid);
+        return getGameObjectsByIds(Collections.singleton(uuid), GameObjectParserConfiguration.builder().throwExceptionOnParseError(true).build()).get(uuid);
     }
 
     public static UUID byteArrayToUUID(final byte[] bytes) {
