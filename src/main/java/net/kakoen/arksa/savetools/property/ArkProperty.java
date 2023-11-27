@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.kakoen.arksa.savetools.ArkBinaryData;
+import net.kakoen.arksa.savetools.ArkPropertyContainer;
 import net.kakoen.arksa.savetools.struct.ArkStructType;
 import net.kakoen.arksa.savetools.struct.UnknownStruct;
 
@@ -140,7 +141,7 @@ public class ArkProperty<T> {
 		int position = byteBuffer.getPosition();
 
 		try {
-			List<ArkProperty<?>> properties = readStructProperties(byteBuffer);
+			ArkPropertyContainer properties = readStructProperties(byteBuffer);
 
 			if (byteBuffer.getPosition() != position + dataSize && !inArray) {
 				throw new Exception(String.format("Position %d before reading struct type %s of size %d, expecting end at %d, but was %d after reading struct", position, structType, dataSize, position + dataSize, byteBuffer.getPosition()));
@@ -155,14 +156,14 @@ public class ArkProperty<T> {
 		}
 	}
 
-	private static List<ArkProperty<?>> readStructProperties(ArkBinaryData byteBuffer) {
+	private static ArkPropertyContainer readStructProperties(ArkBinaryData byteBuffer) {
 		List<ArkProperty<?>> properties = new ArrayList<>();
 		ArkProperty<?> structProperty = readProperty(byteBuffer);
 		while (structProperty != null) {
 			properties.add(structProperty);
 			structProperty = readProperty(byteBuffer);
 		}
-		return properties;
+		return new ArkPropertyContainer(properties);
 	}
 
 	private static ArkProperty<?> readArrayProperty(String key, String type, int position, ArkBinaryData byteBuffer, int dataSize) {
