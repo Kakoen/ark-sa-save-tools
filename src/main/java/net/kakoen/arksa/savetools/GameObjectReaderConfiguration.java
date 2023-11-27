@@ -2,15 +2,18 @@ package net.kakoen.arksa.savetools;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-@Builder
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @Data
-public class GameObjectReaderConfiguration {
+public class GameObjectReaderConfiguration extends GameObjectParserConfiguration {
 
     private Predicate<UUID> uuidFilter;
     private Predicate<Optional<String>> blueprintNameFilter;
