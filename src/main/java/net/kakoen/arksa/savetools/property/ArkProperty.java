@@ -18,180 +18,225 @@ import java.util.List;
 @Slf4j
 public class ArkProperty<T> {
 
-	private String name;
-	private String type;
-	private T value;
+    private String name;
+    private String type;
+    private T value;
 
-	@JsonInclude(JsonInclude.Include.NON_DEFAULT)
-	private int position;
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    private int position;
 
-	@JsonIgnore
-	private byte unknownByte;
+    @JsonIgnore
+    private byte unknownByte;
 
-	public ArkProperty(String name, String type, int position, byte unknownByte, T value) {
-		this.name = name;
-		this.type = type;
-		this.position = position;
-		this.unknownByte = unknownByte;
-		this.value = value;
-	}
+    public ArkProperty(String name, String type, int position, byte unknownByte, T value) {
+        this.name = name;
+        this.type = type;
+        this.position = position;
+        this.unknownByte = unknownByte;
+        this.value = value;
+    }
 
-	public static ArkProperty<?> readProperty(ArkBinaryData byteBuffer) {
-		return readProperty(byteBuffer, false);
-	}
+    public static ArkProperty<?> readProperty(ArkBinaryData byteBuffer) {
+        return readProperty(byteBuffer, false);
+    }
 
-	public static ArkProperty<?> readProperty(ArkBinaryData byteBuffer, boolean inArray) {
-		String key = byteBuffer.readSingleName();
-		int someInt = byteBuffer.readInt();
+    public static ArkProperty<?> readProperty(ArkBinaryData byteBuffer, boolean inArray) {
+        String key = byteBuffer.readSingleName();
+        int someInt = byteBuffer.readInt();
 
-		if (key == null || key.equals("None")) {
-			return null;
-		}
+        if (key == null || key.equals("None")) {
+            return null;
+        }
 
-		String type = byteBuffer.readName();
-		int dataSize = byteBuffer.readInt();
-		int position = byteBuffer.readInt();
+        String valueTypeName = byteBuffer.readName();
+        if(valueTypeName == null) {
+            return null;
+        }
 
-		int startDataPosition = byteBuffer.getPosition();
+        ArkValueType valueType = ArkValueType.fromName(valueTypeName);
+        if (valueType == null) {
+            throw new RuntimeException("Unknown property type " + valueTypeName + " at position " + byteBuffer.getPosition());
+        }
 
-		switch(type) {
-			case "BoolProperty":
-				short value = byteBuffer.readShort();
-				return new ArkProperty<>(key, type, position, (byte)0, value != 0);
-			case "FloatProperty":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readFloat());
-			case "NameProperty":
-				byte unknownByte = byteBuffer.readByte();
-				String name = byteBuffer.readSingleName();
-				int unknownInt = byteBuffer.readInt();
-				return new ArkProperty<>(key, type, position, unknownByte, name);
-			case "IntProperty":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readInt());
-			case "Int8Property":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readByte());
-			case "DoubleProperty":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readDouble());
-			case "UInt32Property":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readUInt32());
-			case "UInt64Property":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readUInt64());
-			case "UInt16Property":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readUInt16());
-			case "Int16Property":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readShort());
-			case "Int64Property":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readLong());
-			case "StrProperty":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readString());
-			case "ByteProperty":
-				String enumType = byteBuffer.readName();
-				if(enumType.equals("None")) {
-					return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readByte());
-				} else {
-					return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readName());
-				}
-			case "StructProperty":
-				String structType = byteBuffer.readName();
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), readStructProperty(byteBuffer, dataSize, structType, inArray));
-			case "ObjectProperty":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), readObjectProperty(byteBuffer));
-			case "SoftObjectProperty":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), byteBuffer.readBytesAsHex(dataSize));
-			case "ArrayProperty":
-				return readArrayProperty(key, type, position, byteBuffer, dataSize);
-			case "MapProperty":
-				return new ArkProperty<>(key, type, position, byteBuffer.readByte(), readProperty(byteBuffer));
-			default:
-				throw new RuntimeException("Unknown property type " + type + " with data size " + dataSize + " at position " + startDataPosition);
-		}
-	}
-	private static List<Object> readStructArray(ArkBinaryData byteBuffer, String arrayType, int count) {
-		List<Object> structArray = new ArrayList<>();
-		String name = byteBuffer.readName();
-		String type = byteBuffer.readName();
-		int dataSize = byteBuffer.readInt();
-		int position = byteBuffer.readInt();
-		String structType = byteBuffer.readName();
-		byte unknownByte = byteBuffer.readByte();
-		byteBuffer.skipBytes(16);
-		for (int i = 0; i < count; i++) {
-			structArray.add(readStructProperty(byteBuffer, dataSize, structType, true));
-		}
-		return structArray;
-	}
+        int dataSize = byteBuffer.readInt();
+        int position = byteBuffer.readInt();
 
-	private static Object readObjectProperty(ArkBinaryData byteBuffer) {
-		boolean isName = byteBuffer.readShort() == 1;
-		if (isName) {
-			return byteBuffer.readName();
-		} else {
-			return byteBuffer.readUUIDAsString();
-		}
-	}
+        int startDataPosition = byteBuffer.getPosition();
 
-	private static Object readStructProperty(ArkBinaryData byteBuffer, int dataSize, String structType, boolean inArray) {
-		if (!inArray)
-			byteBuffer.skipBytes(16);
+        switch (valueType) {
+            case Boolean:
+                return new ArkProperty<>(key, valueTypeName, position, (byte) 0, readPropertyValue(valueType, byteBuffer));
+            case Float, Int, Int8, Double, UInt32, UInt64, UInt16, Int16, Int64, String, Name, SoftObject, Object:
+                return new ArkProperty<>(key, valueTypeName, position, byteBuffer.readByte(), readPropertyValue(valueType, byteBuffer));
+            case Byte:
+                String enumType = byteBuffer.readName();
+                if (enumType.equals("None")) {
+                    return new ArkProperty<>(key, valueTypeName, position, byteBuffer.readByte(), byteBuffer.readByte());
+                } else {
+                    return new ArkProperty<>(key, valueTypeName, position, byteBuffer.readByte(), byteBuffer.readName());
+                }
+            case Struct:
+                String structType = byteBuffer.readName();
+                return new ArkProperty<>(key, valueTypeName, position, byteBuffer.readByte(), readStructProperty(byteBuffer, dataSize, structType, inArray));
+            case Array:
+                return readArrayProperty(key, valueTypeName, position, byteBuffer, dataSize);
+            case Map:
+                return new ArkProperty<>(key, valueTypeName, position, byteBuffer.readByte(), readProperty(byteBuffer));
+            default:
+                throw new RuntimeException("Unknown property type " + valueTypeName + " with data size " + dataSize + " at position " + startDataPosition);
+        }
+    }
 
-		ArkStructType arkStructType = ArkStructType.fromTypeName(structType);
-		if (arkStructType != null) {
-			return arkStructType.getConstructor().apply(byteBuffer);
-		}
+    private static String readSoftObjectPropertyValue(ArkBinaryData byteBuffer) {
+        String objName = byteBuffer.readSingleName();
+        byteBuffer.expect("00 00 00 00 00 00 00 00 ", byteBuffer.readBytesAsHex(8)); //Could it be a UUID?
+        return objName;
+    }
 
-		int position = byteBuffer.getPosition();
+    private static List<Object> readStructArray(ArkBinaryData byteBuffer, String arrayType, int count) {
+        List<Object> structArray = new ArrayList<>();
+        String name = byteBuffer.readName();
+        String type = byteBuffer.readName();
+        int dataSize = byteBuffer.readInt();
+        int position = byteBuffer.readInt();
+        String structType = byteBuffer.readName();
+        byte unknownByte = byteBuffer.readByte();
+        byteBuffer.skipBytes(16);
+        for (int i = 0; i < count; i++) {
+            structArray.add(readStructProperty(byteBuffer, dataSize, structType, true));
+        }
+        return structArray;
+    }
 
-		try {
-			ArkPropertyContainer properties = readStructProperties(byteBuffer);
+    private static String readObjectProperty(ArkBinaryData byteBuffer) {
+        boolean isName = byteBuffer.readShort() == 1;
+        if (isName) {
+            return byteBuffer.readName();
+        } else {
+            return byteBuffer.readUUIDAsString();
+        }
+    }
 
-			if (byteBuffer.getPosition() != position + dataSize && !inArray) {
-				throw new Exception(String.format("Position %d before reading struct type %s of size %d, expecting end at %d, but was %d after reading struct", position, structType, dataSize, position + dataSize, byteBuffer.getPosition()));
-			}
-			return properties;
-		} catch(Exception e) {
-			log.error("Failed to read struct, reading as blob", e);
-			byteBuffer.setPosition(position);
-			byte[] data = byteBuffer.readBytes(dataSize);
-			byteBuffer.debugBinaryData(data);
-			return new UnknownStruct(structType, byteBuffer.bytesToHex(data));
-		}
-	}
+    private static Object readStructProperty(ArkBinaryData byteBuffer, int dataSize, String structType, boolean inArray) {
+        if (!inArray)
+            byteBuffer.skipBytes(16);
 
-	private static ArkPropertyContainer readStructProperties(ArkBinaryData byteBuffer) {
-		List<ArkProperty<?>> properties = new ArrayList<>();
-		ArkProperty<?> structProperty = readProperty(byteBuffer);
-		while (structProperty != null) {
-			properties.add(structProperty);
-			structProperty = readProperty(byteBuffer);
-		}
-		return new ArkPropertyContainer(properties);
-	}
+        ArkStructType arkStructType = ArkStructType.fromTypeName(structType);
+        if (arkStructType != null) {
+            return arkStructType.getConstructor().apply(byteBuffer);
+        }
 
-	private static ArkProperty<?> readArrayProperty(String key, String type, int position, ArkBinaryData byteBuffer, int dataSize) {
-		String arrayType = byteBuffer.readName();
-		byte endOfStruct = byteBuffer.readByte();
-		int arrayLength = byteBuffer.readInt();
-		int bufferPosition = byteBuffer.getPosition();
-		if (arrayType.equals("StructProperty")) {
-			try {
-				List<Object> structArray = readStructArray(byteBuffer, arrayType, arrayLength);
-				int bytesLeft = bufferPosition + dataSize - 4 - byteBuffer.getPosition();
-				if (bytesLeft != 0) {
-					log.error("Struct array read incorrectly, bytes left to read {}: {}", bytesLeft, structArray);
-					if (bytesLeft > 0) {
-						byteBuffer.debugBinaryData(byteBuffer.readBytes(bytesLeft));
-					}
-					throw new Exception(String.format("Struct array read incorrectly, bytes left: %d (reading as binary data instead)", bytesLeft));
-				}
-				return new ArrayProperty<>(key, type, position, endOfStruct, arrayType, arrayLength, structArray, null);
-			} catch(Exception e) {
-				log.error("Failed to read struct array", e);
-				byteBuffer.setPosition(bufferPosition);
-				byte[] data = byteBuffer.readBytes(dataSize - 4);
-				byteBuffer.debugBinaryData(data);
-				return new ArrayProperty<>(key, type, position, endOfStruct, arrayType, arrayLength, byteBuffer.bytesToHex(data), null);
-			}
-		} else {
-			return new ArrayProperty<>(key, type, position, endOfStruct, arrayType, arrayLength, byteBuffer.bytesToHex(byteBuffer.readBytes(dataSize - 4)), null);
-		}
-	}
+        int position = byteBuffer.getPosition();
+
+        try {
+            ArkPropertyContainer properties = readStructProperties(byteBuffer);
+
+            if (byteBuffer.getPosition() != position + dataSize && !inArray) {
+                throw new Exception(String.format("Position %d before reading struct type %s of size %d, expecting end at %d, but was %d after reading struct", position, structType, dataSize, position + dataSize, byteBuffer.getPosition()));
+            }
+            return properties;
+        } catch (Exception e) {
+            log.error("Failed to read struct, reading as blob", e);
+            byteBuffer.setPosition(position);
+            byte[] data = byteBuffer.readBytes(dataSize);
+            byteBuffer.debugBinaryData(data);
+            return new UnknownStruct(structType, byteBuffer.bytesToHex(data));
+        }
+    }
+
+    private static Object readStructProperty(ArkBinaryData byteBuffer, int dataSize, boolean inArray) {
+        String structType = byteBuffer.readName();
+        return readStructProperty(byteBuffer, dataSize, structType, inArray);
+    }
+
+    private static ArkPropertyContainer readStructProperties(ArkBinaryData byteBuffer) {
+        List<ArkProperty<?>> properties = new ArrayList<>();
+        ArkProperty<?> structProperty = readProperty(byteBuffer);
+        while (structProperty != null) {
+            properties.add(structProperty);
+            structProperty = readProperty(byteBuffer);
+        }
+        return new ArkPropertyContainer(properties);
+    }
+
+    private static ArkProperty<?> readArrayProperty(String key, String type, int position, ArkBinaryData byteBuffer, int dataSize) {
+        String arrayType = byteBuffer.readName();
+        byte endOfStruct = byteBuffer.readByte();
+        int arrayLength = byteBuffer.readInt();
+        int bufferPosition = byteBuffer.getPosition();
+        if (arrayType.equals("StructProperty")) {
+            try {
+                List<Object> structArray = readStructArray(byteBuffer, arrayType, arrayLength);
+                int bytesLeft = bufferPosition + dataSize - 4 - byteBuffer.getPosition();
+                if (bytesLeft != 0) {
+                    log.error("Struct array read incorrectly, bytes left to read {}: {}", bytesLeft, structArray);
+                    if (bytesLeft > 0) {
+                        byteBuffer.debugBinaryData(byteBuffer.readBytes(bytesLeft));
+                    }
+                    throw new Exception(String.format("Struct array read incorrectly, bytes left: %d (reading as binary data instead)", bytesLeft));
+                }
+                return new ArrayProperty<>(key, type, position, endOfStruct, arrayType, arrayLength, structArray);
+            } catch (Exception e) {
+                log.error("Failed to read struct array", e);
+                byteBuffer.setPosition(bufferPosition);
+                byte[] data = byteBuffer.readBytes(dataSize - 4);
+                byteBuffer.debugBinaryData(data);
+                return new ArrayProperty<>(key, type, position, endOfStruct, arrayType, arrayLength, byteBuffer.bytesToHex(data));
+            }
+        } else {
+            int expectedEndOfArrayPosition = bufferPosition + dataSize - 4;
+            List<Object> array = new ArrayList<>();
+            ArkValueType valueType = ArkValueType.fromName(arrayType);
+            if (valueType == null) {
+                throw new RuntimeException("Unknown array type " + arrayType + " at position " + byteBuffer.getPosition());
+            }
+
+            for (int i = 0; i < arrayLength; i++) {
+                array.add(readPropertyValue(valueType, byteBuffer));
+            }
+            if (expectedEndOfArrayPosition != byteBuffer.getPosition()) {
+                log.error("Array read incorrectly, bytes left to read {}: {}", expectedEndOfArrayPosition - byteBuffer.getPosition(), array);
+                byteBuffer.debugBinaryData(byteBuffer.readBytes(expectedEndOfArrayPosition - byteBuffer.getPosition()));
+                throw new RuntimeException(String.format("Array read incorrectly, bytes left: %d (reading as binary data instead)", expectedEndOfArrayPosition - byteBuffer.getPosition()));
+            }
+            return new ArrayProperty<>(key, type, position, endOfStruct, arrayType, arrayLength, array);
+        }
+    }
+
+    private static Object readPropertyValue(ArkValueType valueType, ArkBinaryData byteBuffer) {
+        switch (valueType) {
+            case Byte, Int8:
+                return byteBuffer.readByte();
+            case Double:
+                return byteBuffer.readDouble();
+            case Float:
+                return byteBuffer.readFloat();
+            case Int:
+                return byteBuffer.readInt();
+            case Object:
+                return readObjectProperty(byteBuffer);
+            case String:
+                return byteBuffer.readString();
+            case UInt32:
+                return byteBuffer.readUInt32();
+            case UInt64:
+                return byteBuffer.readUInt64();
+            case UInt16:
+                return byteBuffer.readUInt16();
+            case Int16:
+                return byteBuffer.readShort();
+            case Int64:
+                return byteBuffer.readLong();
+            case Name:
+                return byteBuffer.readName();
+            case Boolean:
+                return byteBuffer.readShort() == 1;
+            case Struct:
+                return readStructProperty(byteBuffer, byteBuffer.readInt(), true);
+            case SoftObject:
+                return readSoftObjectPropertyValue(byteBuffer);
+            default:
+                throw new RuntimeException("Cannot read value type yet: " + valueType + " at position " + byteBuffer.getPosition());
+        }
+    }
 }
