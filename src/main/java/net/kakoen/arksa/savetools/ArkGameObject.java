@@ -3,8 +3,9 @@ package net.kakoen.arksa.savetools;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import net.kakoen.arksa.savetools.struct.ArkVector;
+import net.kakoen.arksa.savetools.struct.ActorTransform;
 
+import java.util.List;
 import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
@@ -16,14 +17,13 @@ public class ArkGameObject extends ArkPropertyContainer {
 	private String blueprint;
 	private String name;
 	private String className;
-	private ArkVector location;
+	private ActorTransform location;
 	private boolean item;
 
 	public ArkGameObject(UUID uuid, String blueprint, ArkBinaryData byteBuffer) {
 		this.uuid = uuid;
-		this.location = byteBuffer.getSaveContext().getActorLocation(uuid).orElse(null);
+		this.location = byteBuffer.getSaveContext().getActorTransform(uuid).orElse(null);
 		this.blueprint = blueprint;
-
 		byteBuffer.skipBytes(8);
 		this.className = byteBuffer.readSingleName();
 		this.item = byteBuffer.readBoolean();
