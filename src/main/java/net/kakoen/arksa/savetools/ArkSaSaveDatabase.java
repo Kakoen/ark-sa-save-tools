@@ -32,7 +32,7 @@ public class ArkSaSaveDatabase implements AutoCloseable {
     private void readActorLocations() throws SQLException {
         ArkBinaryData actorTransforms = getCustomValue("ActorTransforms");
         if (actorTransforms != null) {
-            saveContext.setActorLocations(actorTransforms.readActorTransforms());
+            saveContext.setActorTransforms(actorTransforms.readActorTransforms());
         }
     }
 

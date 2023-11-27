@@ -2,7 +2,7 @@ package net.kakoen.arksa.savetools;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.kakoen.arksa.savetools.struct.ArkVector;
+import net.kakoen.arksa.savetools.struct.ActorTransform;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -179,16 +179,15 @@ public class ArkBinaryData {
 		return byteBuffer.getLong();
 	}
 
-	public Map<UUID, ArkVector> readActorTransforms() {
-		Map<UUID, ArkVector> locations = new HashMap<>();
+	public Map<UUID, ActorTransform> readActorTransforms() {
+		Map<UUID, ActorTransform> actorTransforms = new HashMap<>();
 		UUID terminationUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 		UUID uuid = readUUID();
 		while(!uuid.equals(terminationUUID)) {
-			locations.put(uuid, new ArkVector(readDouble(), readDouble(), readDouble()));
-			skipBytes(32); //unknown bytes
+			actorTransforms.put(uuid, new ActorTransform(this));
 			uuid = readUUID();
 		}
-		return locations;
+		return actorTransforms;
 	}
 
 	public void expect(Object expected, Object read) {

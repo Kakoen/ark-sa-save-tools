@@ -1,7 +1,7 @@
 package net.kakoen.arksa.savetools;
 
 import lombok.Data;
-import net.kakoen.arksa.savetools.struct.ArkVector;
+import net.kakoen.arksa.savetools.struct.ActorTransform;
 
 import java.util.List;
 import java.util.Map;
@@ -13,11 +13,11 @@ public class SaveContext {
 
     private Map<Integer, String> names;
     private List<String> parts;
-    private Map<UUID, ArkVector> actorLocations;
+    private Map<UUID, ActorTransform> actorTransforms;
     private int saveVersion;
-    private double gameTime; // Uncertain...
+    private double gameTime;
 
-    public Optional<ArkVector> getActorLocation(UUID uuid) {
-        return Optional.ofNullable(actorLocations.get(uuid));
+    public Optional<ActorTransform> getActorTransform(UUID uuid) {
+        return Optional.ofNullable(actorTransforms.get(uuid));
     }
 }

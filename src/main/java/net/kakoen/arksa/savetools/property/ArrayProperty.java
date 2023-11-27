@@ -2,7 +2,6 @@ package net.kakoen.arksa.savetools.property;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import net.kakoen.arksa.savetools.property.ArkProperty;
 
 @EqualsAndHashCode(callSuper = false)
 @Data
