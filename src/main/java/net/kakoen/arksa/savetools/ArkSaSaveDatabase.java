@@ -104,6 +104,13 @@ public class ArkSaSaveDatabase implements AutoCloseable {
                     }
                 } catch (Exception e) {
                     log.error("Error parsing " + uuid + " of type " + className + ", debug info following", e);
+
+                    if(readerConfiguration.isWriteBinFileOnParseError()) {
+                        Path outFile = Files.createTempFile(uuid + "-debug", ".bin");
+                        Files.write(outFile, resultSet.getBytes("value"));
+                        log.error("Wrote debug data to {}", outFile);
+                    }
+
                     ArkSaveUtils.enableDebugLogging = true;
                     byteBuffer.setPosition(startOfObject);
                     try {
