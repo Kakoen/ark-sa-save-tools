@@ -2,6 +2,7 @@ package net.kakoen.arksa.savetools;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.kakoen.arksa.savetools.property.ArkValueType;
 import net.kakoen.arksa.savetools.struct.ActorTransform;
 
 import java.math.BigInteger;
@@ -107,19 +108,22 @@ public class ArkBinaryData {
         byteBuffer.position(i);
     }
 
-    public void findNames() {
+    public List<String> findNames() {
         if (!saveContext.hasNameTable()) {
-            return;
+            return List.of();
         }
         log.info("--- Looking for names ---");
+        List<String> found = new ArrayList<>();
         for (int i = 0; i < size() - 4; i++) {
             setPosition(i);
             String n = saveContext.getNames().get(readInt());
             if (n != null) {
+                found.add(n);
                 log.info("Found name: {} at {}", n, i);
                 i += 3;
             }
         }
+        return found;
     }
 
     public double readDouble() {
@@ -214,5 +218,36 @@ public class ArkBinaryData {
             result.add(readString());
         }
         return result;
+    }
+
+    public List<String> readNames(int nameCount) {
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i < nameCount; i++) {
+            result.add(readName());
+        }
+        return result;
+    }
+
+    public ArkValueType readValueTypeByName() {
+        int position = getPosition();
+        String keyTypeName = readName();
+        ArkValueType keyType = ArkValueType.fromName(keyTypeName);
+        if(keyType == null) throw new IllegalStateException("Unknown value type " + keyTypeName + " at position " + position);
+        return keyType;
+    }
+
+    public String readPart() {
+        int partIndex = byteBuffer.getInt();
+        if(partIndex >= 0 && partIndex < saveContext.getParts().size()) {
+            return saveContext.getParts().get(partIndex);
+        }
+        return null;
+    }
+
+    public int peekInt() {
+        int position = getPosition();
+        int value = readInt();
+        setPosition(position);
+        return value;
     }
 }

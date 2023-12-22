@@ -15,21 +15,19 @@ public class ArkGameObject extends ArkPropertyContainer {
 
 	private UUID uuid;
 	private String blueprint;
-	private String name;
-	private String className;
+	private List<String> names;
 	private ActorTransform location;
-	private boolean item;
+	private String part;
+	private byte unknown;
 
 	public ArkGameObject(UUID uuid, String blueprint, ArkBinaryData byteBuffer) {
 		this.uuid = uuid;
 		this.location = byteBuffer.getSaveContext().getActorTransform(uuid).orElse(null);
 		this.blueprint = blueprint;
-		byteBuffer.skipBytes(8);
-		this.className = byteBuffer.readSingleName();
-		this.item = byteBuffer.readBoolean();
-		this.name = byteBuffer.readSingleName();
-
-		byteBuffer.skipBytes(1);
+		byteBuffer.expect(0, byteBuffer.readInt());
+		this.names = byteBuffer.readNames(byteBuffer.readInt());
+		this.part = byteBuffer.readPart();
+		this.unknown = byteBuffer.readByte();
 
 		readProperties(byteBuffer);
 	}

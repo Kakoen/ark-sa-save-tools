@@ -7,6 +7,7 @@ import net.kakoen.arksa.savetools.property.ArkProperty;
 import java.util.*;
 
 @Data
+@Slf4j
 public class ArkPropertyContainer {
 
     private List<ArkProperty<?>> properties = new ArrayList<>();
@@ -21,16 +22,15 @@ public class ArkPropertyContainer {
     public void readProperties(ArkBinaryData byteBuffer) {
         int lastPropertyPosition = byteBuffer.getPosition();
         try {
-            ArkProperty<?> arkProperty = ArkProperty.readProperty(byteBuffer);
             while (byteBuffer.hasMore()) {
-                if(arkProperty != null) getProperties().add(arkProperty);
-                ArkSaveUtils.debugLog("Position: " + byteBuffer.byteBuffer.position());
-                lastPropertyPosition = byteBuffer.byteBuffer.position();
-                arkProperty = ArkProperty.readProperty(byteBuffer);
-                if(arkProperty == null || arkProperty.getName().equals("None")) {
-                    return;
+                ArkSaveUtils.debugLog("Position: " + byteBuffer.getPosition());
+                ArkProperty<?> arkProperty = ArkProperty.readProperty(byteBuffer);
+                if(arkProperty == null) {
+                    break;
                 }
                 ArkSaveUtils.debugLog("Property {}", arkProperty);
+                properties.add(arkProperty);
+                lastPropertyPosition = byteBuffer.byteBuffer.position();
             }
         } catch(Exception e) {
             ArkSaveUtils.debugLog("Could not read properties", e);

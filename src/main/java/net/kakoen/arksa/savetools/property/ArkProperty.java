@@ -11,7 +11,9 @@ import net.kakoen.arksa.savetools.struct.ArkStructType;
 import net.kakoen.arksa.savetools.struct.UnknownStruct;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -47,15 +49,7 @@ public class ArkProperty<T> {
             return null;
         }
 
-        String valueTypeName = byteBuffer.readName();
-        if (valueTypeName == null) {
-            return null;
-        }
-
-        ArkValueType valueType = ArkValueType.fromName(valueTypeName);
-        if (valueType == null) {
-            throw new RuntimeException("Unknown property type " + valueTypeName + " at position " + byteBuffer.getPosition());
-        }
+        ArkValueType valueType = byteBuffer.readValueTypeByName();
 
         int dataSize = byteBuffer.readInt();
         int position = byteBuffer.readInt();
@@ -64,26 +58,98 @@ public class ArkProperty<T> {
 
         switch (valueType) {
             case Boolean:
-                return new ArkProperty<>(key, valueTypeName, position, (byte) 0, readPropertyValue(valueType, byteBuffer));
+                return new ArkProperty<>(key, valueType.getName(), position, (byte) 0, readPropertyValue(valueType, byteBuffer));
             case Float, Int, Int8, Double, UInt32, UInt64, UInt16, Int16, Int64, String, Name, SoftObject, Object:
-                return new ArkProperty<>(key, valueTypeName, position, byteBuffer.readByte(), readPropertyValue(valueType, byteBuffer));
+                return new ArkProperty<>(key, valueType.getName(), position, byteBuffer.readByte(), readPropertyValue(valueType, byteBuffer));
             case Byte:
                 String enumType = byteBuffer.readName();
                 if (enumType.equals("None")) {
-                    return new ArkProperty<>(key, valueTypeName, position, byteBuffer.readByte(), byteBuffer.readByte());
+                    return new ArkProperty<>(key, valueType.getName(), position, byteBuffer.readByte(), byteBuffer.readByte());
                 } else {
-                    return new ArkProperty<>(key, valueTypeName, position, byteBuffer.readByte(), byteBuffer.readName());
+                    return new ArkProperty<>(key, valueType.getName(), position, byteBuffer.readByte(), byteBuffer.readName());
                 }
             case Struct:
                 String structType = byteBuffer.readName();
-                return new ArkProperty<>(key, valueTypeName, position, byteBuffer.readByte(), readStructProperty(byteBuffer, dataSize, structType, inArray));
+                return new ArkProperty<>(key, valueType.getName(), position, byteBuffer.readByte(), readStructProperty(byteBuffer, dataSize, structType, inArray));
             case Array:
-                return readArrayProperty(key, valueTypeName, position, byteBuffer, dataSize);
+                return readArrayProperty(key, valueType.getName(), position, byteBuffer, dataSize);
             case Map:
-                return new ArkProperty<>(key, valueTypeName, position, byteBuffer.readByte(), readProperty(byteBuffer));
+                return readMapProperty(key, valueType.getName(), position, byteBuffer, dataSize);
             default:
-                throw new RuntimeException("Unknown property type " + valueTypeName + " with data size " + dataSize + " at position " + startDataPosition);
+                throw new RuntimeException("Unsupported property type " + valueType + " with data size " + dataSize + " at position " + startDataPosition);
         }
+    }
+
+    private static ArkProperty<?> readMapProperty(String key, String valueTypeName, int position, ArkBinaryData byteBuffer, int dataSize) {
+        ArkValueType keyType = byteBuffer.readValueTypeByName();
+        ArkValueType valueType = byteBuffer.readValueTypeByName();
+
+        byte unknownByte = byteBuffer.readByte();
+        int startOfData = byteBuffer.getPosition();
+        byteBuffer.expect(0, byteBuffer.readInt());
+        int count = byteBuffer.readInt();
+
+        List<ArkProperty<?>> mapEntries = new ArrayList<>();
+        try {
+            for(int i = 0; i < count; i++) {
+                if(valueType == ArkValueType.Struct) {
+                    mapEntries.add(readStructMap(keyType, byteBuffer));
+                } else {
+                    log.error("Unsupported map value type {}", valueType);
+                    throw new IllegalStateException("Unsupported Map value: " + valueType);
+                }
+            }
+        } finally {
+            if(byteBuffer.getPosition() != startOfData + dataSize) {
+                log.error("Map read incorrectly, bytes left to read {}: {}", startOfData + dataSize - byteBuffer.getPosition(), mapEntries);
+                byteBuffer.debugBinaryData(byteBuffer.readBytes(startOfData + dataSize - byteBuffer.getPosition()));
+            }
+        }
+
+        return new ArkProperty<>(key, valueTypeName, position, unknownByte, new ArkPropertyContainer(mapEntries));
+    }
+
+    private static ArkProperty<?> readStructMap(ArkValueType keyType, ArkBinaryData byteBuffer) {
+        List<ArkProperty<?>> propertyValues = new ArrayList<>();
+        String keyName = readPropertyValue(keyType, byteBuffer, String.class);
+        while(true) {
+            String valueName = byteBuffer.readName();
+            if(valueName == null || valueName.equals("None")) {
+                break;
+            }
+            ArkValueType mapValueType = byteBuffer.readValueTypeByName();
+            switch(mapValueType) {
+                case Set -> {
+                    propertyValues.add(new ArkProperty<>(valueName, mapValueType.getName(), 0, (byte) 0, readSetProperty(byteBuffer)));
+                }
+                default -> {
+                    throw new RuntimeException("Unsupported map value type " + mapValueType + " at position " + byteBuffer.getPosition());
+                }
+            }
+        }
+        return new ArkProperty<>(keyName, "MapProperty", 0, (byte)0, new ArkPropertyContainer(propertyValues));
+    }
+
+    private static ArkSet readSetProperty(ArkBinaryData byteBuffer) {
+        Set<Object> values = new LinkedHashSet<>();
+        int dataSize = byteBuffer.readInt();
+        byteBuffer.expect(0, byteBuffer.readInt());
+        ArkValueType valueType = byteBuffer.readValueTypeByName();
+
+        byte unknownByte = byteBuffer.readByte();
+
+        int startOfData = byteBuffer.getPosition();
+        int skipCount = byteBuffer.readInt();
+        int objectCount = byteBuffer.readInt();
+
+        for(int i = 0; i < objectCount; i++) {
+                values.add(readPropertyValue(valueType, byteBuffer));
+        }
+
+        if(startOfData + dataSize != byteBuffer.getPosition()) {
+            log.error("Set read incorrectly, bytes left to read {}: {}", startOfData + dataSize - byteBuffer.getPosition(), values);
+        }
+        return new ArkSet(valueType, values);
     }
 
     private static String readSoftObjectPropertyValue(ArkBinaryData byteBuffer) {
@@ -112,8 +178,9 @@ public class ArkProperty<T> {
     }
 
     private static Object readStructProperty(ArkBinaryData byteBuffer, int dataSize, String structType, boolean inArray) {
-        if (!inArray)
-            byteBuffer.skipBytes(16);
+        if (!inArray) {
+            byteBuffer.expect("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ", byteBuffer.readBytesAsHex(16));
+        }
 
         ArkStructType arkStructType = ArkStructType.fromTypeName(structType);
         if (arkStructType != null) {
@@ -200,6 +267,11 @@ public class ArkProperty<T> {
             }
             return new ArrayProperty<>(key, type, position, endOfStruct, arrayType, arrayLength, array);
         }
+    }
+
+    @SuppressWarnings({"unchecked", "unused"})
+    private static <T> T readPropertyValue(ArkValueType valueType, ArkBinaryData byteBuffer, Class<T> returnType) {
+        return (T)readPropertyValue(valueType, byteBuffer);
     }
 
     private static Object readPropertyValue(ArkValueType valueType, ArkBinaryData byteBuffer) {

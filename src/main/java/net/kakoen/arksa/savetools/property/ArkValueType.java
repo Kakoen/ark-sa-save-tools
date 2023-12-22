@@ -24,6 +24,7 @@ public enum ArkValueType {
     UInt32("UInt32Property", Long.class),
     UInt64("UInt64Property", BigInteger.class),
     SoftObject("SoftObjectProperty", String.class),
+    Set("SetProperty", ArkSet.class),
     Map("MapProperty", ArkProperty.class); //FIXME
 
     private final String name;
