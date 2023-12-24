@@ -1,6 +1,7 @@
 import net.kakoen.arksa.savetools.ArkProfile;
 import net.kakoen.arksa.savetools.ArkTribe;
 import net.kakoen.arksa.savetools.utils.JsonUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -12,6 +13,7 @@ public class TestArkProfiles {
     Path testPath = Path.of("c:\\tmp\\save\\");
 
     @Test
+    @Disabled
     public void test() throws IOException {
         // Try to read every .arktribe file by using ArkTribe constructor
         // and print the result

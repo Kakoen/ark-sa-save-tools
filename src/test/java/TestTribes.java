@@ -12,6 +12,7 @@ public class TestTribes {
     Path testPath = Path.of("c:\\tmp\\save\\");
 
     @Test
+    @Disabled
     public void test() throws IOException {
         // Try to read every .arktribe file by using ArkTribe constructor
         // and print the result
