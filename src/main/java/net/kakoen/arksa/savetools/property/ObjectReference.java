@@ -32,7 +32,10 @@ public class ObjectReference {
         }
 
         int objectType = reader.readInt();
-        if (objectType == 0) {
+        if (objectType == -1) {
+            type = TYPE_UNKNOWN;
+            value = null;
+        } else if (objectType == 0) {
             type = TYPE_ID;
             value = reader.readInt();
         } else if (objectType == 1) {
