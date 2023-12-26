@@ -44,18 +44,17 @@ public class TestCryopods {
                         .map(TestCryopods::toByteArray)
                         .orElse(null);
 
-                try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes)) {
-                    byte[] header = byteArrayInputStream.readNBytes(12); //Contains constant, size of inflated data, and name table offset?
+                try (ByteArrayInputStream rawInputStream = new ByteArrayInputStream(bytes);
+                     InflaterInputStream inflaterInputStream = new InflaterInputStream(rawInputStream);
+                     WildcardInflaterInputStream inputStream = new WildcardInflaterInputStream(inflaterInputStream)) {
 
-                    try (InflaterInputStream is = new InflaterInputStream(byteArrayInputStream);
-                         WildcardInflaterInputStream wildcardInflater = new WildcardInflaterInputStream(is)) {
+                    rawInputStream.readNBytes(12); //Header contains a constant, size of inflated data and possibly offset of names table
 
-                        byte[] inflated = wildcardInflater.readAllBytes();
-                        Files.write(OUT_BIN_CRYOPODS.resolve( cryopod.getUuid() + ".bytes0.bin"), inflated);
-                        //log.info("Found {} for {}, start: {}", bytes, object, 12);
-                    } catch(Exception e) {
-                        log.error("Failed to read data for {}", cryopod, e);
-                    }
+                    byte[] inflated = inputStream.readAllBytes();
+                    Files.write(OUT_BIN_CRYOPODS.resolve( cryopod.getUuid() + ".bytes0.bin"), inflated);
+                    //log.info("Found {} for {}, start: {}", bytes, object, 12);
+                } catch(Exception e) {
+                    log.error("Failed to read data for {}", cryopod, e);
                 }
 
                 //Read saddle
