@@ -3,7 +3,7 @@ package net.kakoen.arksa.savetools.utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayDeque;
-import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Helper for reading cryopod data
@@ -46,11 +46,17 @@ public class WildcardInflaterInputStream extends InputStream {
 				readState = ReadState.Switch;
 				return read();
 			}
-			if(next >= 0xF2) {
+			if(next >= 0xF2 && next < 0xFF) {
 				int byteCount = next & 0x0F;
 				for(int i = 0; i < byteCount; i++) {
 					fifoQueue.add(0);
 				}
+				return read();
+			}
+			if(next == 0xFF) {
+				int b1 = is.read();
+				int b2 = is.read();
+				fifoQueue.addAll(List.of(0, 0, 0, b1, 0, 0, 0, b2, 0, 0, 0));
 				return read();
 			}
 		}
