@@ -1,27 +1,20 @@
 import lombok.extern.slf4j.Slf4j;
 import net.kakoen.arksa.savetools.*;
+import net.kakoen.arksa.savetools.cryopod.Cryopod;
 import net.kakoen.arksa.savetools.utils.JsonUtils;
-import net.kakoen.arksa.savetools.utils.WildcardInflaterInputStream;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.zip.InflaterInputStream;
+import java.util.*;
 
 @Slf4j
 public class TestCryopods {
 
     private final static Path OUT_BIN = Path.of("c:\\tmp\\out\\bin");
-    private final static Path OUT_BIN_CRYOPODS = OUT_BIN.resolve("cryopods");
     private final static Path OUT_JSON = Path.of("c:\\tmp\\out\\json");
-    private final static Path OUT_JSON_CRYOPODS = OUT_JSON.resolve("cryopods");
 
     public static void main(String[] args) {
         try (ArkSaSaveDatabase arkSaSaveDatabase = new ArkSaSaveDatabase(new File("c:\\tmp\\save\\TheIsland_WP.ark"))) {
@@ -29,74 +22,56 @@ public class TestCryopods {
                     .blueprintNameFilter(name -> name.isPresent() && name.get().contains("PrimalItem_WeaponEmptyCryopod_C"))
                     .binaryFilesOutputDirectory(OUT_BIN)
                     .jsonFilesOutputDirectory(OUT_JSON)
+                    //.uuidFilter(uuid -> uuid.equals(UUID.fromString("6f138c51-5abd-0f4e-bfee-6f03fc5475da")))
                     .build();
 
-            Files.createDirectories(OUT_BIN_CRYOPODS);
-            Files.createDirectories(OUT_JSON_CRYOPODS);
-
             Map<UUID, ArkGameObject> objects = arkSaSaveDatabase.getGameObjects(readerConfiguration);
-            for(ArkGameObject cryopod : objects.values()) {
-                List<ArkPropertyContainer> byteArrays = getByteArrays(cryopod).orElse(null);
-                if(byteArrays == null) continue;
+            for (ArkGameObject gameObject : objects.values()) {
+                List<ArkPropertyContainer> byteArrays = getByteArrays(gameObject).orElse(null);
+                if (byteArrays == null) continue;
+
+                Cryopod cryopod = new Cryopod(gameObject.getUuid());
 
                 //Read dino and status component
-                byte[] bytes = byteArrays.get(0).getArrayPropertyValue("Bytes", Byte.class)
+                byteArrays.get(0).getArrayPropertyValue("Bytes", Byte.class)
                         .map(TestCryopods::toByteArray)
-                        .orElse(null);
-
-                try (ByteArrayInputStream rawInputStream = new ByteArrayInputStream(bytes);
-                     InflaterInputStream inflaterInputStream = new InflaterInputStream(rawInputStream);
-                     WildcardInflaterInputStream inputStream = new WildcardInflaterInputStream(inflaterInputStream)) {
-
-                    rawInputStream.readNBytes(12); //Header contains a constant, size of inflated data and possibly offset of names table
-
-                    byte[] inflated = inputStream.readAllBytes();
-                    Files.write(OUT_BIN_CRYOPODS.resolve( cryopod.getUuid() + ".bytes0.bin"), inflated);
-                    //log.info("Found {} for {}, start: {}", bytes, object, 12);
-                } catch(Exception e) {
-                    log.error("Failed to read data for {}", cryopod, e);
-                }
+                        .ifPresent(bytes -> cryopod.parseDinoAndStatusComponentData(bytes, readerConfiguration));
 
                 //Read saddle
-                parsePropertiesAndWrite(
-                        byteArrays.get(1).getArrayPropertyValue("Bytes", Byte.class).orElse(null),
-                        OUT_BIN_CRYOPODS.resolve(cryopod.getUuid() + ".bytes1.bin"),
-                        OUT_JSON_CRYOPODS.resolve(cryopod.getUuid() + ".bytes1.json")
-                );
+                cryopod.setSaddle(parseProperties(
+                        byteArrays.get(1).getArrayPropertyValue("Bytes", Byte.class).orElse(null)
+                ));
 
                 //Read costume
-                parsePropertiesAndWrite(
-                        byteArrays.get(2).getArrayPropertyValue("Bytes", Byte.class).orElse(null),
-                        OUT_BIN_CRYOPODS.resolve(cryopod.getUuid() + ".bytes2.bin"),
-                        OUT_JSON_CRYOPODS.resolve(cryopod.getUuid() + ".bytes2.json")
-                );
+                cryopod.setCostume(parseProperties(
+                        byteArrays.get(2).getArrayPropertyValue("Bytes", Byte.class).orElse(null)
+                ));
+
+                if (readerConfiguration.getJsonFilesOutputDirectory() != null) {
+                    JsonUtils.writeJsonToFile(cryopod, readerConfiguration.getJsonFilesOutputDirectory().resolve("cryopods").resolve(gameObject.getUuid() + ".json"));
+                }
             }
             log.info("Found {} objects", objects.size());
         } catch (Exception e) {
             log.error("Something bad happened!", e);
             throw new RuntimeException("Failed to read save file", e);
         }
+
     }
 
-    private static void parsePropertiesAndWrite(List<Byte> byteData, Path binOutputPath, Path jsonOutputPath) throws IOException {
-        if(byteData == null || byteData.isEmpty()) {
-            return;
+    private static ArkPropertyContainer parseProperties(List<Byte> byteData) {
+        if (byteData == null || byteData.isEmpty()) {
+            return null;
         }
 
         byte[] bytes = toByteArray(byteData);
-        //Write bytes to path
-        if(binOutputPath != null) {
-            Files.write(binOutputPath, bytes);
-        }
 
         ArkBinaryData data = new ArkBinaryData(bytes);
         data.expect(6, data.readInt());
         ArkPropertyContainer container = new ArkPropertyContainer();
         container.readProperties(data);
 
-        if(jsonOutputPath != null) {
-            JsonUtils.writeJsonToFile(container, jsonOutputPath);
-        }
+        return container;
     }
 
     private static Optional<List<ArkPropertyContainer>> getByteArrays(ArkGameObject object) {
@@ -106,18 +81,9 @@ public class TestCryopods {
                 .flatMap(customDataBytes -> customDataBytes.getArrayPropertyValue("ByteArrays", ArkPropertyContainer.class));
     }
 
-    private static ByteBuffer toByteBuffer(List<Byte> bytes, int start) {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(bytes.size() - start);
-        for(int i = start; i < bytes.size(); i++) {
-            byteBuffer.put(bytes.get(i));
-        }
-        byteBuffer.flip();
-        return byteBuffer;
-    }
-
     private static byte[] toByteArray(List<Byte> bytes) {
         byte[] result = new byte[bytes.size()];
-        for(int i = 0; i < bytes.size(); i++) {
+        for (int i = 0; i < bytes.size(); i++) {
             result[i] = bytes.get(i);
         }
         return result;
