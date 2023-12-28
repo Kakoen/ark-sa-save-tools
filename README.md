@@ -67,6 +67,10 @@ try {
 }
 ```
 
+### Reading Cryopod data
+
+Reading Cryopod data is a bit more complex, but can be done. See `src/test/java/TestCryopods.java` for a starting point.
+
 ## Help?
 
 My time is limited, so I might not be able to provide extended support for using this library. But you

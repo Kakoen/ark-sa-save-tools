@@ -19,7 +19,7 @@ public class ArkBinaryData {
     ByteBuffer byteBuffer;
 
     @Getter
-    private SaveContext saveContext;
+    private final SaveContext saveContext;
 
     public ArkBinaryData(byte[] data) {
         this.byteBuffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
@@ -138,7 +138,7 @@ public class ArkBinaryData {
         if (!saveContext.hasNameTable()) {
             return readString();
         }
-        String name = saveContext.getNames().get(readInt());
+        String name = saveContext.getName(readInt());
         int alwaysZero = readInt();
         if (alwaysZero != 0) {
             ArkSaveUtils.debugLog("Always zero is not zero: {}", alwaysZero, new Throwable());
@@ -181,13 +181,6 @@ public class ArkBinaryData {
 
     public BigInteger readUInt64() {
         return new BigInteger(Long.toUnsignedString(byteBuffer.getLong()));
-    }
-
-    public String readSingleName() {
-        if (!saveContext.hasNameTable()) {
-            return readString();
-        }
-        return saveContext.getNames().get(readInt());
     }
 
     public long readLong() {
@@ -249,5 +242,14 @@ public class ArkBinaryData {
         int value = readInt();
         setPosition(position);
         return value;
+    }
+
+    public List<UUID> readUuids() {
+        int uuidCount = readInt();
+        List<UUID> uuids = new ArrayList<>();
+        for (int i = 0; i < uuidCount; i++) {
+            uuids.add(readUUID());
+        }
+        return uuids;
     }
 }

@@ -25,4 +25,13 @@ public class ActorTransform {
         roll = reader.readDouble();
         reader.skipBytes(8);
     }
+
+    public ActorTransform(ArkVector vector, ArkRotator rotator) {
+        this.x = vector.getX();
+        this.y = vector.getY();
+        this.z = vector.getZ();
+        this.pitch = rotator.getPitch();
+        this.yaw = rotator.getYaw();
+        this.roll = rotator.getRoll();
+    }
 }
