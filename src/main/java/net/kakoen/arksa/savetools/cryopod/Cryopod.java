@@ -21,6 +21,7 @@ public class Cryopod {
         // Not complete, but enough to read (most) cryopods...
         NAME_CONSTANTS.put(0, "TribeName");
         NAME_CONSTANTS.put(1, "StrProperty");
+        NAME_CONSTANTS.put(2, "bServerInitializedDino");
         NAME_CONSTANTS.put(3, "BoolProperty");
         NAME_CONSTANTS.put(5, "FloatProperty");
         NAME_CONSTANTS.put(6, "ColorSetIndices");
@@ -30,6 +31,8 @@ public class Cryopod {
         NAME_CONSTANTS.put(10, "NameProperty");
         NAME_CONSTANTS.put(11, "TamingTeamID");
         NAME_CONSTANTS.put(12, "UInt64Property"); //???
+        NAME_CONSTANTS.put(13, "RequiredTameAffinity");
+        NAME_CONSTANTS.put(14, "TamingTeamID");
         NAME_CONSTANTS.put(15, "IntProperty");
         NAME_CONSTANTS.put(19, "StructProperty");
         NAME_CONSTANTS.put(23, "DinoID1");
@@ -38,9 +41,13 @@ public class Cryopod {
         NAME_CONSTANTS.put(31, "UploadedFromServerName");
         NAME_CONSTANTS.put(32, "TamedOnServerName");
         NAME_CONSTANTS.put(36, "TargetingTeam");
+        NAME_CONSTANTS.put(38, "bReplicateGlobalStatusValues");
+        NAME_CONSTANTS.put(39, "bAllowLevelUps");
+        NAME_CONSTANTS.put(40, "bServerFirstInitialized");
         NAME_CONSTANTS.put(41, "ExperiencePoints");
         NAME_CONSTANTS.put(42, "CurrentStatusValues");
         NAME_CONSTANTS.put(44, "ArrayProperty");
+        NAME_CONSTANTS.put(55, "bIsFemale");
     }
 
     private List<ArkGameObject> dinoAndStatusComponent;
