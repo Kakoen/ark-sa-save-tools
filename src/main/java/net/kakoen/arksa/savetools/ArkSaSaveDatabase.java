@@ -3,6 +3,7 @@ package net.kakoen.arksa.savetools;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.kakoen.arksa.savetools.utils.JsonUtils;
+import org.sqlite.SQLiteConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,8 +24,17 @@ public class ArkSaSaveDatabase implements AutoCloseable {
     private final static int MAX_IN_LIST = 10000;
 
     public ArkSaSaveDatabase(File arkFile) throws SQLException {
+        this(arkFile, true);
+    }
+
+    public ArkSaSaveDatabase(File arkFile, boolean readOnly) throws SQLException {
         this.sqliteDb = arkFile;
-        this.connection = DriverManager.getConnection("jdbc:sqlite:" + arkFile.getAbsolutePath());
+
+        SQLiteConfig config = new SQLiteConfig();
+        config.setReadOnly(readOnly);
+
+        this.connection = DriverManager.getConnection("jdbc:sqlite:" + arkFile.getAbsolutePath(), config.toProperties());
+
         readHeader();
         readActorLocations();
     }
