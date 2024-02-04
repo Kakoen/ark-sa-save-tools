@@ -1,14 +1,18 @@
 import lombok.extern.slf4j.Slf4j;
-import net.kakoen.arksa.savetools.*;
+import net.kakoen.arksa.savetools.ArkBinaryData;
+import net.kakoen.arksa.savetools.ArkGameObject;
+import net.kakoen.arksa.savetools.ArkPropertyContainer;
+import net.kakoen.arksa.savetools.ArkSaSaveDatabase;
+import net.kakoen.arksa.savetools.GameObjectReaderConfiguration;
 import net.kakoen.arksa.savetools.cryopod.Cryopod;
 import net.kakoen.arksa.savetools.utils.JsonUtils;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 public class TestCryopods {
@@ -34,7 +38,6 @@ public class TestCryopods {
 
                 //Read dino and status component
                 byteArrays.get(0).getArrayPropertyValue("Bytes", Byte.class)
-                        .map(TestCryopods::toByteArray)
                         .ifPresent(bytes -> cryopod.parseDinoAndStatusComponentData(bytes, readerConfiguration));
 
                 //Read saddle

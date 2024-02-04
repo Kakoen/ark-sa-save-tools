@@ -2,12 +2,24 @@ package net.kakoen.arksa.savetools.cryopod;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import net.kakoen.arksa.savetools.*;
+import net.kakoen.arksa.savetools.ArkBinaryData;
+import net.kakoen.arksa.savetools.ArkGameObject;
+import net.kakoen.arksa.savetools.ArkPropertyContainer;
+import net.kakoen.arksa.savetools.ArkSaveUtils;
+import net.kakoen.arksa.savetools.GameObjectReaderConfiguration;
+import net.kakoen.arksa.savetools.SaveContext;
+import net.kakoen.arksa.savetools.utils.ByteListInputStream;
 import net.kakoen.arksa.savetools.utils.WildcardInflaterInputStream;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.zip.InflaterInputStream;
 
 
@@ -59,30 +71,49 @@ public class Cryopod {
         this.uuid = uuid;
     }
 
-    public void parseDinoAndStatusComponentData(byte[] bytes, GameObjectReaderConfiguration readerConfiguration) {
-        try (ByteArrayInputStream rawInputStream = new ByteArrayInputStream(bytes);
+    public void parseDinoAndStatusComponentData(List<Byte> bytes, GameObjectReaderConfiguration readerConfiguration) {
+        try (ByteListInputStream rawInputStream = new ByteListInputStream(bytes);
              InflaterInputStream inflaterInputStream = new InflaterInputStream(rawInputStream);
              WildcardInflaterInputStream inputStream = new WildcardInflaterInputStream(inflaterInputStream)) {
 
-            ArkBinaryData headerData = new ArkBinaryData(rawInputStream.readNBytes(12));
-            headerData.expect(0x0406, headerData.readInt());
-            int inflatedSize = headerData.readInt(); //size of inflated data, before WildcardInflaterInputStream has been applied
-            int namesOffset = headerData.readInt();
+            readHeaderDinoAndStatusComponent(rawInputStream, inputStream, readerConfiguration);
 
-            byte[] inflatedData = inputStream.readAllBytes();
-
-            if (readerConfiguration.getBinaryFilesOutputDirectory() != null) {
-                Files.createDirectories(readerConfiguration.getBinaryFilesOutputDirectory().resolve("cryopods"));
-                Files.write(readerConfiguration.getBinaryFilesOutputDirectory().resolve("cryopods").resolve(uuid + ".bytes0.bin"), inflatedData);
-            }
-
-            readDinoAndStatusComponent(new ArkBinaryData(inflatedData), namesOffset);
         } catch (Exception e) {
             log.error("Failed to read data for {}", this, e);
             if (readerConfiguration.isThrowExceptionOnParseError()) {
                 throw new RuntimeException("Failed to read cryopod data for UUID " + uuid, e);
             }
         }
+    }
+
+    public void parseDinoAndStatusComponentData(byte[] bytes, GameObjectReaderConfiguration readerConfiguration) {
+        try (ByteArrayInputStream rawInputStream = new ByteArrayInputStream(bytes);
+             InflaterInputStream inflaterInputStream = new InflaterInputStream(rawInputStream);
+             WildcardInflaterInputStream inputStream = new WildcardInflaterInputStream(inflaterInputStream)) {
+
+            readHeaderDinoAndStatusComponent(rawInputStream, inputStream, readerConfiguration);
+        } catch (Exception e) {
+            log.error("Failed to read data for {}", this, e);
+            if (readerConfiguration.isThrowExceptionOnParseError()) {
+                throw new RuntimeException("Failed to read cryopod data for UUID " + uuid, e);
+            }
+        }
+    }
+
+    private void readHeaderDinoAndStatusComponent(InputStream rawInputStream, InputStream inflatedInputStream, GameObjectReaderConfiguration readerConfiguration) throws IOException {
+        ArkBinaryData headerData = new ArkBinaryData(rawInputStream.readNBytes(12));
+        headerData.expect(0x0406, headerData.readInt());
+        int inflatedSize = headerData.readInt(); //size of inflated data, before WildcardInflaterInputStream has been applied
+        int namesOffset = headerData.readInt();
+
+        byte[] inflatedData = inflatedInputStream.readAllBytes();
+
+        if (readerConfiguration.getBinaryFilesOutputDirectory() != null) {
+            Files.createDirectories(readerConfiguration.getBinaryFilesOutputDirectory().resolve("cryopods"));
+            Files.write(readerConfiguration.getBinaryFilesOutputDirectory().resolve("cryopods").resolve(uuid + ".bytes0.bin"), inflatedData);
+        }
+
+        readDinoAndStatusComponent(new ArkBinaryData(inflatedData), namesOffset);
     }
 
     private void readDinoAndStatusComponent(ArkBinaryData reader, int namesTableOffset) {
