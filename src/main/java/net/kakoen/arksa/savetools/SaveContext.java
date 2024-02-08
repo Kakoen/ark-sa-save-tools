@@ -18,6 +18,7 @@ public class SaveContext {
     private int saveVersion;
     private double gameTime;
     private boolean generateUnknownNames;
+    private long unknownValue;
 
     public Optional<ActorTransform> getActorTransform(UUID uuid) {
         return Optional.ofNullable(actorTransforms.get(uuid));

@@ -52,6 +52,10 @@ public class ArkSaSaveDatabase implements AutoCloseable {
         int nameTableOffset = headerData.readInt();
         saveContext.setGameTime(headerData.readDouble());
 
+        if (saveContext.getSaveVersion() >= 12) {
+            saveContext.setUnknownValue(headerData.readUInt32());
+        }
+
         saveContext.setParts(readParts(headerData));
 
         // Unknown data, seems to be always 0...
@@ -115,7 +119,7 @@ public class ArkSaSaveDatabase implements AutoCloseable {
                 } catch (Exception e) {
                     log.error("Error parsing " + uuid + " of type " + className + ", debug info following", e);
 
-                    if(readerConfiguration.isWriteBinFileOnParseError()) {
+                    if (readerConfiguration.isWriteBinFileOnParseError()) {
                         Path outFile = Files.createTempFile(uuid + "-debug", ".bin");
                         Files.write(outFile, resultSet.getBytes("value"));
                         log.error("Wrote debug data to {}", outFile);
@@ -219,7 +223,7 @@ public class ArkSaSaveDatabase implements AutoCloseable {
                         byteBuffer.setPosition(0);
                         log.error("Data: {}", byteBuffer.readBytesAsHex(byteBuffer.size()));
 
-                        if(objectParserConfiguration.isThrowExceptionOnParseError()) {
+                        if (objectParserConfiguration.isThrowExceptionOnParseError()) {
                             throw e;
                         }
                     }
