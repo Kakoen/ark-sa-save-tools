@@ -116,10 +116,12 @@ public class ArkBinaryData {
         List<String> found = new ArrayList<>();
         for (int i = 0; i < size() - 4; i++) {
             setPosition(i);
-            String n = saveContext.getNames().get(readInt());
+            int intValue = readInt();
+            String n = saveContext.getNames().get(intValue);
             if (n != null) {
                 found.add(n);
-                log.info("Found name: {} at {}", n, i);
+                setPosition(i);
+                log.info("Found name: {} ({}) at {}", n, readBytesAsHex(4), i);
                 i += 3;
             }
         }
