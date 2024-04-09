@@ -64,7 +64,7 @@ public class ArkProperty<T> {
             case Byte:
                 String enumType = byteBuffer.readName();
                 if (enumType.equals("None")) {
-                    return new ArkProperty<>(key, valueType.getName(), position, byteBuffer.readByte(), byteBuffer.readByte());
+                    return new ArkProperty<>(key, valueType.getName(), position, byteBuffer.readByte(), byteBuffer.readUnsignedByte());
                 } else {
                     return new ArkProperty<>(key, valueType.getName(), position, byteBuffer.readByte(), byteBuffer.readName());
                 }
@@ -267,7 +267,9 @@ public class ArkProperty<T> {
 
     private static Object readPropertyValue(ArkValueType valueType, ArkBinaryData byteBuffer) {
         switch (valueType) {
-            case Byte, Int8:
+            case Byte:
+                return byteBuffer.readUnsignedByte();
+            case Int8:
                 return byteBuffer.readByte();
             case Double:
                 return byteBuffer.readDouble();

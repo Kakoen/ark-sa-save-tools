@@ -132,6 +132,10 @@ public class ArkBinaryData {
         return byteBuffer.getDouble();
     }
 
+    public short readUnsignedByte() {
+        return (short) (readByte() & 0xFF);
+    }
+
     public byte readByte() {
         return byteBuffer.get();
     }
