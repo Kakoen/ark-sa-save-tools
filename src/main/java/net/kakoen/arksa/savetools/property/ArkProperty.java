@@ -243,9 +243,12 @@ public class ArkProperty<T> {
                 throw new RuntimeException("Unknown array type " + arrayType + " at position " + byteBuffer.getPosition());
             }
 
+            //Read byte arrays as unsigned bytes...
+            ArkValueType readValueType = valueType == ArkValueType.Byte ? ArkValueType.Int8 : valueType;
+
             try {
                 for (int i = 0; i < arrayLength; i++) {
-                    array.add(readPropertyValue(valueType, byteBuffer));
+                    array.add(readPropertyValue(readValueType, byteBuffer));
                 }
                 if (expectedEndOfArrayPosition != byteBuffer.getPosition()) {
                     throw new RuntimeException(String.format("Array read incorrectly, bytes left: %d (reading as binary data instead)", expectedEndOfArrayPosition - byteBuffer.getPosition()));
