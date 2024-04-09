@@ -60,10 +60,32 @@ public class ArkSaSaveDatabase implements AutoCloseable {
 
         // Unknown data, seems to be always 0...
         headerData.expect(0, headerData.readInt());
-        headerData.expect(0, headerData.readInt());
+
+        //This contains Watervein_Base_BP stuff
+        try {
+            saveContext.setSomeOtherTable(readSomeOtherTable(headerData));
+        } catch(Exception e) {
+            log.error("Failed to read 'some other table', but it isn't used anyway in our tool, so we'll ignore it", e);
+        }
+
+        if(headerData.getPosition() != nameTableOffset) {
+            log.warn("Name table offset does not match current position, skipping to offset. Unread bytes: {}", nameTableOffset - headerData.getPosition());
+            headerData.debugBinaryData(headerData.readBytes(nameTableOffset - headerData.getPosition()));
+        }
 
         headerData.setPosition(nameTableOffset);
         saveContext.setNames(readNames(headerData));
+    }
+
+    private Map<Integer, String> readSomeOtherTable(ArkBinaryData headerData) {
+        int waterRelatedStuffCount = headerData.readInt();
+        Map<Integer, String> result = new HashMap<>();
+        for (int i = 0; i < waterRelatedStuffCount; i++) {
+            int someInt = headerData.readInt();
+            headerData.expect(1, headerData.readInt());
+            result.put(someInt, headerData.readString());
+        }
+        return result;
     }
 
     private List<String> readParts(ArkBinaryData headerData) {

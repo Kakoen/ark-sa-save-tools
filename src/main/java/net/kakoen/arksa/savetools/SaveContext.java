@@ -13,6 +13,7 @@ public class SaveContext {
 
     private Map<Integer, String> names;
     private Map<Integer, String> constantNameTable;
+    private Map<Integer, String> someOtherTable;
     private List<String> parts;
     private Map<UUID, ActorTransform> actorTransforms;
     private int saveVersion;
