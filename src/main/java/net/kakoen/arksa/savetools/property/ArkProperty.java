@@ -75,6 +75,8 @@ public class ArkProperty<T> {
                 return readArrayProperty(key, valueType.getName(), position, byteBuffer, dataSize);
             case Map:
                 return readMapProperty(key, valueType.getName(), position, byteBuffer, dataSize);
+            case Set:
+                return readSetProperty(key, valueType.getName(), position, byteBuffer, dataSize);
             default:
                 throw new RuntimeException("Unsupported property type " + valueType + " with data size " + dataSize + " at position " + startDataPosition);
         }
@@ -113,43 +115,32 @@ public class ArkProperty<T> {
         List<ArkProperty<?>> propertyValues = new ArrayList<>();
         String keyName = readPropertyValue(keyType, byteBuffer, String.class);
         while(true) {
-            String valueName = byteBuffer.readName();
-            if(valueName == null || valueName.equals("None")) {
+            ArkProperty<?> property = readProperty(byteBuffer);
+            if(property == null) {
                 break;
             }
-            ArkValueType mapValueType = byteBuffer.readValueTypeByName();
-            switch(mapValueType) {
-                case Set -> {
-                    propertyValues.add(new ArkProperty<>(valueName, mapValueType.getName(), 0, (byte) 0, readSetProperty(byteBuffer)));
-                }
-                default -> {
-                    throw new RuntimeException("Unsupported map value type " + mapValueType + " at position " + byteBuffer.getPosition());
-                }
-            }
+            propertyValues.add(property);
         }
         return new ArkProperty<>(keyName, "MapProperty", 0, (byte)0, new ArkPropertyContainer(propertyValues));
     }
 
-    private static ArkSet readSetProperty(ArkBinaryData byteBuffer) {
-        Set<Object> values = new LinkedHashSet<>();
-        int dataSize = byteBuffer.readInt();
-        byteBuffer.expect(0, byteBuffer.readInt());
+    private static ArkProperty<ArkSet> readSetProperty(String key, String valueTypeName, int position, ArkBinaryData byteBuffer, int dataSize) {
         ArkValueType valueType = byteBuffer.readValueTypeByName();
-
         byte unknownByte = byteBuffer.readByte();
-
         int startOfData = byteBuffer.getPosition();
-        int skipCount = byteBuffer.readInt();
-        int objectCount = byteBuffer.readInt();
+        byteBuffer.expect(0, byteBuffer.readInt());
+        int count = byteBuffer.readInt();
 
-        for(int i = 0; i < objectCount; i++) {
-                values.add(readPropertyValue(valueType, byteBuffer));
+        Set<Object> values = new LinkedHashSet<>();
+        for(int i = 0; i < count; i++) {
+            values.add(readPropertyValue(valueType, byteBuffer));
         }
 
         if(startOfData + dataSize != byteBuffer.getPosition()) {
             log.error("Set read incorrectly, bytes left to read {}: {}", startOfData + dataSize - byteBuffer.getPosition(), values);
         }
-        return new ArkSet(valueType, values);
+        return new ArkProperty<>(key, valueTypeName, position, unknownByte, new ArkSet(valueType, values));
+
     }
 
     private static String readSoftObjectPropertyValue(ArkBinaryData byteBuffer) {
