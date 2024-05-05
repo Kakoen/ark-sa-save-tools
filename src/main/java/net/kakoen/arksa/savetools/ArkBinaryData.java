@@ -222,7 +222,7 @@ public class ArkBinaryData {
     public List<String> readNames(int nameCount) {
         List<String> result = new ArrayList<>();
         for (int i = 0; i < nameCount; i++) {
-            result.add(readName());
+            result.add(saveContext.isReadNamesAsStrings() ? readString() : readName());
         }
         return result;
     }
