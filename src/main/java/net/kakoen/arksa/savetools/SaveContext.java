@@ -50,4 +50,8 @@ public class SaveContext {
     public void useConstantNameTable(Map<Integer, String> constantNameTable) {
         this.constantNameTable = constantNameTable;
     }
+
+    public boolean isReadNamesAsStrings() {
+        return saveVersion >= 13;
+    }
 }
