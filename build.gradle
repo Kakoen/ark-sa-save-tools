@@ -21,7 +21,7 @@ java {
 
 
 dependencies {
-    implementation group: 'org.slf4j', name: 'slf4j-simple', version: '2.0.13'
+    implementation group: 'org.slf4j', name: 'slf4j-simple', version: '2.0.16'
 
     compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.36'
     annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.36'
