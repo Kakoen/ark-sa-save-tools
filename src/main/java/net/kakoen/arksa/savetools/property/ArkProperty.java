@@ -144,9 +144,13 @@ public class ArkProperty<T> {
     }
 
     private static String readSoftObjectPropertyValue(ArkBinaryData byteBuffer) {
-        String objName = byteBuffer.readName();
+        if(!byteBuffer.getSaveContext().hasNameTable()) {
+            return "[" + String.join(", ", byteBuffer.readNames()) + "]";
+        }
+
+        String result = byteBuffer.readName();
         byteBuffer.expect("00 00 00 00 ", byteBuffer.readBytesAsHex(4));
-        return objName;
+        return result;
     }
 
     private static List<Object> readStructArray(ArkBinaryData byteBuffer, String arrayType, int count) {

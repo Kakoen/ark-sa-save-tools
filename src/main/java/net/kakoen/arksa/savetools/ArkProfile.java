@@ -12,6 +12,10 @@ public class ArkProfile extends ArkArchive {
         super(file);
     }
 
+    public ArkProfile(ArkBinaryData data, SaveContext saveContext) {
+        super(data, saveContext);
+    }
+
     public ArkObject getProfile() {
         return getObjectByClass("/Game/PrimalEarth/CoreBlueprints/PrimalPlayerDataBP.PrimalPlayerDataBP_C");
     }
