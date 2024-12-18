@@ -15,10 +15,13 @@ public class ArkArchive {
     private List<ArkObject> objects = new ArrayList<>();
 
     public ArkArchive(Path file) throws IOException {
-        SaveContext saveContext = new SaveContext();
-        ArkBinaryData data = new ArkBinaryData(Files.readAllBytes(file), saveContext);
-        saveContext.setSaveVersion(data.readInt());
+        this(new ArkBinaryData(Files.readAllBytes(file)), new SaveContext());
+    }
 
+    public ArkArchive(ArkBinaryData data, SaveContext saveContext) {
+        int startPosition = data.getPosition();
+
+        saveContext.setSaveVersion(data.readInt());
         if(saveContext.getSaveVersion() != 5) {
             throw new RuntimeException("Unsupported archive version " + saveContext.getSaveVersion());
         }
@@ -29,7 +32,7 @@ public class ArkArchive {
         }
 
         for (ArkObject object : objects) {
-            data.setPosition(object.getPropertiesOffset());
+            data.setPosition(startPosition + object.getPropertiesOffset());
             object.readProperties(data);
         }
 
