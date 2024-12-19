@@ -28,6 +28,7 @@ public class TribeAndPlayerData {
     }
 
     private void initializeData() {
+        boolean something = data.readBoolean();
         readTribeHeaders();
         readPlayerHeaders();
     }
@@ -35,6 +36,9 @@ public class TribeAndPlayerData {
     private void readPlayerHeaders() {
         int playerHeaderStart = data.readInt() + data.getPosition() + HEADER_OFFSET_ADJUSTMENT;
         int playerCount = data.readInt();
+        if (playerCount == 0) {
+            return;
+        }
         int playerDataStart = data.getPosition();
 
         data.setPosition(playerHeaderStart);
@@ -47,10 +51,9 @@ public class TribeAndPlayerData {
     }
 
     private void readTribeHeaders() {
-        boolean containsTribeData = data.readBoolean();
         int tribeHeaderStart = data.readInt() + TRIBE_HEADER_BASE_OFFSET;
         int tribeCount = data.readInt();
-        if (!containsTribeData) {
+        if (tribeCount == 0) {
             return;
         }
         int tribeDataStart = data.getPosition();
@@ -58,7 +61,7 @@ public class TribeAndPlayerData {
         data.setPosition(tribeHeaderStart);
         for (int i = 0; i < tribeCount; i++) {
             long tribeId = data.readUInt32();
-            data.expect(1, data.readInt()); // Verify expected data
+            int something = data.readInt();
             int offset = data.readInt() + tribeDataStart;
             int size = data.readInt();
             tribeDataPointers.put(new TribeIdentifier(tribeId), new OffsetAndSize(offset, size));
