@@ -180,6 +180,8 @@ public class ArkProperty<T> {
         ArkStructType arkStructType = ArkStructType.fromTypeName(structType);
         if (arkStructType != null) {
             return arkStructType.getConstructor().apply(byteBuffer);
+        } else {
+            log.debug("Unknown struct type {}", structType);
         }
 
         int position = byteBuffer.getPosition();

@@ -8,13 +8,13 @@ public class ArkUniqueNetIdRepl {
 
     private byte unknown;
     private String valueType;
-    private String value;
+    private byte[] value;
 
     public ArkUniqueNetIdRepl(ArkBinaryData byteBuffer) {
         unknown = byteBuffer.readByte();
         valueType = byteBuffer.readString();
         byte length = byteBuffer.readByte();
-        value = byteBuffer.readBytesAsHex(length);
+        value = byteBuffer.readBytes(length);
     }
 
 }
