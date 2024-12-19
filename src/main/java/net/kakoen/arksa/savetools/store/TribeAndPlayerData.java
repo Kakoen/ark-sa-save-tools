@@ -28,7 +28,6 @@ public class TribeAndPlayerData {
     }
 
     private void initializeData() {
-        data.expect(1, data.readInt()); // Verify expected data
         readTribeHeaders();
         readPlayerHeaders();
     }
@@ -48,8 +47,12 @@ public class TribeAndPlayerData {
     }
 
     private void readTribeHeaders() {
+        boolean containsTribeData = data.readBoolean();
         int tribeHeaderStart = data.readInt() + TRIBE_HEADER_BASE_OFFSET;
         int tribeCount = data.readInt();
+        if (!containsTribeData) {
+            return;
+        }
         int tribeDataStart = data.getPosition();
 
         data.setPosition(tribeHeaderStart);
