@@ -22,7 +22,7 @@ public class ArkArchive {
         int startPosition = data.getPosition();
 
         saveContext.setSaveVersion(data.readInt());
-        if(saveContext.getSaveVersion() != 5) {
+        if(saveContext.getSaveVersion() < 5 || saveContext.getSaveVersion() > 6) {
             throw new RuntimeException("Unsupported archive version " + saveContext.getSaveVersion());
         }
 
