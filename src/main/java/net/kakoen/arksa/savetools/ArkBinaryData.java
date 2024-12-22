@@ -9,7 +9,12 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 import static net.kakoen.arksa.savetools.ArkSaSaveDatabase.byteArrayToUUID;
 
@@ -257,5 +262,16 @@ public class ArkBinaryData {
             uuids.add(readUUID());
         }
         return uuids;
+    }
+
+    public List<String> readNames() {
+        //Keep reading names until null
+        List<String> names = new ArrayList<>();
+        String name = readName();
+        while (name != null) {
+            names.add(name);
+            name = readName();
+        }
+        return names;
     }
 }

@@ -12,6 +12,10 @@ public class ArkTribe extends ArkArchive {
         super(file);
     }
 
+    public ArkTribe(ArkBinaryData data, SaveContext saveContext) {
+        super(data, saveContext);
+    }
+
     public ArkObject getTribe() {
         return getObjectByClass("/Script/ShooterGame.PrimalTribeData");
     }

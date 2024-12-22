@@ -2,6 +2,7 @@ package net.kakoen.arksa.savetools;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.kakoen.arksa.savetools.store.TribeAndPlayerData;
 import net.kakoen.arksa.savetools.utils.JsonUtils;
 import org.sqlite.SQLiteConfig;
 
@@ -40,14 +41,14 @@ public class ArkSaSaveDatabase implements AutoCloseable {
     }
 
     private void readActorLocations() throws SQLException {
-        ArkBinaryData actorTransforms = getCustomValue("ActorTransforms");
+        ArkBinaryData actorTransforms = getCustomValue("ActorTransforms", false);
         if (actorTransforms != null) {
             saveContext.setActorTransforms(actorTransforms.readActorTransforms());
         }
     }
 
     private void readHeader() throws SQLException {
-        ArkBinaryData headerData = getCustomValue("SaveHeader");
+        ArkBinaryData headerData = getCustomValue("SaveHeader", true);
         saveContext.setSaveVersion(headerData.readShort());
         int nameTableOffset = headerData.readInt();
         saveContext.setGameTime(headerData.readDouble());
@@ -98,6 +99,25 @@ public class ArkSaSaveDatabase implements AutoCloseable {
         }
 
         return parts;
+    }
+
+    public TribeAndPlayerData getTribeAndPlayerData() throws SQLException {
+        return new TribeAndPlayerData(getCustomValue("GameModeCustomBytes", false));
+    }
+
+    public Set<UUID> getAllGameObjectUuids() {
+        Set<UUID> uuids = new HashSet<>();
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("SELECT key, value FROM game")) {
+
+            Map<UUID, ArkGameObject> gameObjects = new HashMap<>();
+            while (resultSet.next()) {
+                uuids.add(byteArrayToUUID(resultSet.getBytes("key")));
+            }
+            return uuids;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Map<UUID, ArkGameObject> getGameObjects(GameObjectReaderConfiguration readerConfiguration) throws SQLException, IOException {
@@ -185,12 +205,12 @@ public class ArkSaSaveDatabase implements AutoCloseable {
         return names;
     }
 
-    public ArkBinaryData getCustomValue(String key) throws SQLException {
+    public ArkBinaryData getCustomValue(String key, boolean withSaveContext) throws SQLException {
         try (Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery("SELECT value FROM custom WHERE key = '" + key + "' LIMIT 1")) {
 
             if (resultSet.next()) {
-                return new ArkBinaryData(resultSet.getBytes("value"), saveContext);
+                return new ArkBinaryData(resultSet.getBytes("value"), withSaveContext ? saveContext : new SaveContext());
             }
             return null;
         }

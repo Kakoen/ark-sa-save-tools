@@ -67,6 +67,23 @@ try {
 }
 ```
 
+### Reading Ark Tribes and Players from save file (when server uses -usestore)
+
+```java
+try (ArkSaSaveDatabase arkSaSaveDatabase = new ArkSaSaveDatabase(TestConstants.TEST_SAVED_ARKS_FILE.toFile())) {
+    TribeAndPlayerData tribeAndPlayerData = arkSaSaveDatabase.getTribeAndPlayerData();
+    
+    List<ArkProfile> arkProfiles = tribeAndPlayerData.getPlayerIdentifiers().stream()
+            .map(tribeAndPlayerData::getArkProfile)
+            .toList();
+    
+    List<ArkTribe> arkTribes = tribeAndPlayerData.getTribeIdentifiers().stream()
+            .map(tribeAndPlayerData::getArkTribe)
+            .toList();
+}    
+
+```
+
 ### Reading Cryopod data
 
 Reading Cryopod data is a bit more complex, but can be done. See `src/test/java/TestCryopods.java` for a starting point.
