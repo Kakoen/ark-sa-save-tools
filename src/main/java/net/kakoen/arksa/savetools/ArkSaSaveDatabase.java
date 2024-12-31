@@ -49,6 +49,9 @@ public class ArkSaSaveDatabase implements AutoCloseable {
 
     private void readHeader() throws SQLException {
         ArkBinaryData headerData = getCustomValue("SaveHeader", true);
+        if (headerData == null) {
+            return;
+        }
         saveContext.setSaveVersion(headerData.readShort());
         int nameTableOffset = headerData.readInt();
         saveContext.setGameTime(headerData.readDouble());
