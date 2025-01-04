@@ -282,6 +282,46 @@ public class ArkSaSaveDatabase implements AutoCloseable {
         return getGameObjectsByIds(Collections.singleton(uuid), GameObjectParserConfiguration.builder().throwExceptionOnParseError(true).build()).get(uuid);
     }
 
+    public Map<UUID, String> getHashOfObjects(Collection<UUID> gameObjectIds, String hashAlgorithm) {
+        if (gameObjectIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        if (gameObjectIds.size() > MAX_IN_LIST) {
+            Map<UUID, String> gameObjects = new HashMap<>();
+            List<UUID> uuidList = new ArrayList<>(gameObjectIds);
+            for (int i = 0; i < uuidList.size(); i += MAX_IN_LIST) {
+                gameObjects.putAll(getHashOfObjects(uuidList.subList(i, Math.min(i + MAX_IN_LIST, uuidList.size())), hashAlgorithm));
+            }
+            return gameObjects;
+        }
+
+        String placeholders = String.join(",", Collections.nCopies(gameObjectIds.size(), "?"));
+        String query = "SELECT key, value FROM game WHERE key IN (" + placeholders + ")";
+
+        Map<UUID, String> hashesById = new HashMap<>();
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            // Set UUID parameters
+            int parameterIndex = 1;
+            for (UUID uuid : gameObjectIds) {
+                preparedStatement.setBytes(parameterIndex++, UUIDToByteArray(uuid));
+            }
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    UUID actualUuid = byteArrayToUUID(resultSet.getBytes("key"));
+                    byte[] valueBytes = resultSet.getBytes("value");
+                    hashesById.put(actualUuid, ArkSaveUtils.calculateHash(valueBytes, hashAlgorithm));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return hashesById;
+    }
+
     public static UUID byteArrayToUUID(final byte[] bytes) {
         ByteBuffer bb = ByteBuffer.wrap(bytes);
         long high = bb.getLong();
