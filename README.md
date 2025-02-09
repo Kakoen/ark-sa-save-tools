@@ -29,6 +29,10 @@ try (ArkSaSaveDatabase arkSaSaveDatabase = new ArkSaSaveDatabase(new File("c:\\t
 }
 ```
 
+### Reading wild dinos with status
+
+See [GetWildDinos.java](examples/dinos/GetWildDinos.java) for a starting point.
+
 ### Reading *.arktribe files
 
 See ArkTribe as a starting point
