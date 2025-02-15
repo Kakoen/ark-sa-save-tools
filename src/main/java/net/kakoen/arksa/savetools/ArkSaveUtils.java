@@ -2,9 +2,6 @@ package net.kakoen.arksa.savetools;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
 @Slf4j
 public class ArkSaveUtils {
 
@@ -13,16 +10,6 @@ public class ArkSaveUtils {
 	public static void debugLog(String message, Object... args) {
 		if(enableDebugLogging) {
 			log.info(message, args);
-		}
-	}
-
-	public static String calculateHash(byte[] valueBytes, String hashAlgorithm) {
-		try {
-			MessageDigest digest = MessageDigest.getInstance(hashAlgorithm);
-			byte[] hash = digest.digest(valueBytes);
-			return bytesToHex(hash);
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException("Failed to calculate hash", e);
 		}
 	}
 
