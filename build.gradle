@@ -4,8 +4,8 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
-group = 'net.kakoen.arksa'
-version = "0.0.29"
+group 'net.kakoen.arksa'
+version '0.0.30'
 
 repositories {
     mavenCentral()
