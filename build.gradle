@@ -32,8 +32,8 @@ dependencies {
 
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.4'
-    testImplementation 'net.openhft:zero-allocation-hashing:0.16'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.12.1'
+    testImplementation 'net.openhft:zero-allocation-hashing:0.27ea0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
