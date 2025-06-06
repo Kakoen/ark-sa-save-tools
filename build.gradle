@@ -4,8 +4,8 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
-group 'net.kakoen.arksa'
-version '0.0.31'
+group = 'net.kakoen.arksa'
+version = '0.0.31'
 
 repositories {
     mavenCentral()
@@ -14,8 +14,8 @@ repositories {
 java {
     withSourcesJar()
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 
@@ -59,7 +59,7 @@ jar.finalizedBy(shadowJar)
 /** Publish start **/
 project.publishing.repositories {
     maven {
-        url "https://nexus.kakoen.net/repository/maven-" + (version.contains("SNAPSHOT") ? 'snapshots' : 'releases')
+        url = "https://nexus.kakoen.net/repository/maven-" + (version.contains("SNAPSHOT") ? 'snapshots' : 'releases')
     }
 }
 
