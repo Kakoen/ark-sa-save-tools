@@ -28,7 +28,7 @@ dependencies {
     testCompileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
     testAnnotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
 
-    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.49.1.0'
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.50.1.0'
 
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.19.0'
 
