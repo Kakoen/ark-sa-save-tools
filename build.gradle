@@ -13,25 +13,26 @@ repositories {
 java {
     withSourcesJar()
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 
 dependencies {
-    implementation group: 'org.slf4j', name: 'slf4j-simple', version: '2.0.16'
+    implementation group: 'org.slf4j', name: 'slf4j-simple', version: '2.0.17'
 
-    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.36'
-    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.36'
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
+    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
 
-    testCompileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.36'
-    testAnnotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.36'
+    testCompileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
+    testAnnotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
 
-    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.47.1.0'
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.50.1.0'
 
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.19.0'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.4'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.1'
+    testImplementation 'net.openhft:zero-allocation-hashing:0.27ea0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
