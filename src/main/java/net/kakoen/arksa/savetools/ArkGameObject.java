@@ -38,6 +38,10 @@ public class ArkGameObject extends ArkPropertyContainer {
 		this.part = binaryReader.readPart();
 		this.unknown = binaryReader.readByte();
 
+		if (binaryReader.hasMore() && binaryReader.currentParseContext().ge(ArchiveType.SAVE, 14)) {
+			binaryReader.expect((byte) 0, binaryReader.readByte());
+		}
+
 		readProperties(binaryReader);
 	}
 
@@ -60,7 +64,7 @@ public class ArkGameObject extends ArkPropertyContainer {
 	}
 
 	public void readExtraData(ArkBinaryData reader) {
-		if(reader.hasMore() && reader.readBoolean()) { //Boolean? Or count?
+		if(reader.hasMore() && reader.readBoolean()) {
 			uuid2 = reader.readUUID();
 		}
 	}

@@ -2,6 +2,7 @@ package net.kakoen.arksa.savetools.property;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import net.kakoen.arksa.savetools.ArchiveType;
 import net.kakoen.arksa.savetools.ArkBinaryData;
 
 @Data
@@ -19,7 +20,8 @@ public class ObjectReference {
     private Object value;
 
     public ObjectReference(ArkBinaryData reader) {
-        if (reader.getSaveContext().hasNameTable()) {
+        //Not sure how to do this better yet, other than checking for cryopod data specifically
+        if (reader.getSaveContext().hasNameTable() && reader.currentParseContext().getArchiveType() != ArchiveType.CRYOPOD) {
             boolean isName = reader.readShort() == 1;
             if (isName) {
                 type = TYPE_PATH;

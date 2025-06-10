@@ -7,11 +7,14 @@ import lombok.EqualsAndHashCode;
 @Data
 public class ArrayProperty<T> extends ArkProperty<T> {
 	private final String arrayType;
-	private int arrayLength;
 
-	public ArrayProperty(String key, String type, int index, byte endOfStruct, String arrayType, int arrayLength, T data) {
-		super(key, type, index, endOfStruct, data);
+	public ArrayProperty(String key, String type, int index, String arrayType, T data) {
+		super(key, type, index, data);
 		this.arrayType = arrayType;
-		this.arrayLength = arrayLength;
+	}
+
+	public ArrayProperty(ArkPropertyHeader header, String arrayType, T data) {
+		super(header, data);
+		this.arrayType = arrayType;
 	}
 }
