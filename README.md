@@ -29,6 +29,10 @@ try (ArkSaSaveDatabase arkSaSaveDatabase = new ArkSaSaveDatabase(new File("c:\\t
 }
 ```
 
+### Reading wild dinos with status
+
+See [GetWildDinos.java](examples/dinos/GetWildDinos.java) for a starting point.
+
 ### Reading *.arktribe files
 
 See ArkTribe as a starting point
@@ -94,3 +98,12 @@ My time is limited, so I might not be able to provide extended support for using
 can join the Discord I created for this project to find like-minded people.
 
 See https://discord.gg/by2q2Tqjyr
+
+## Projects based on and/or inspired by this library
+
+* [miragedmuk/ASV/ASASavegameToolkit](https://github.com/miragedmuk/ASV/tree/master/AsaSavegameToolkit) - C# port, used in Ark Save Visualizer.
+* [VincentHenauGithub/ark-save-parser](https://github.com/VincentHenauGithub/ark-save-parser) - Python port.
+
+## Donations
+
+If you find this library useful and would like to support me, you can [donate here](https://www.paypal.com/donate/?business=RHMFDY3A7H3VU&no_recurring=0&item_name=Ark+Sa+Save+Tools). Thank you :)
