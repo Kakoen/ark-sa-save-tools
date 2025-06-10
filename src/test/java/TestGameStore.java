@@ -3,7 +3,9 @@ import net.kakoen.arksa.savetools.ArkProfile;
 import net.kakoen.arksa.savetools.ArkSaSaveDatabase;
 import net.kakoen.arksa.savetools.ArkTribe;
 import net.kakoen.arksa.savetools.store.TribeAndPlayerData;
+import net.kakoen.arksa.savetools.utils.HashUtils;
 import net.kakoen.arksa.savetools.utils.JsonUtils;
+import net.openhft.hashing.LongHashFunction;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +13,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.util.List;
+import java.time.Instant;
+import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @Disabled
@@ -21,8 +25,6 @@ public class TestGameStore {
     public void canReadAllPlayersFromStore() throws Exception {
         try (ArkSaSaveDatabase arkSaSaveDatabase = new ArkSaSaveDatabase(TestConstants.TEST_SAVED_ARKS_FILE.toFile())) {
             TribeAndPlayerData tribeAndPlayerData = arkSaSaveDatabase.getTribeAndPlayerData();
-            List<ArkProfile> arkProfiles = tribeAndPlayerData.getPlayerIdentifiers().stream().map(tribeAndPlayerData::getArkProfile).toList();
-            List<ArkTribe> arkTribes = tribeAndPlayerData.getTribeIdentifiers().stream().map(tribeAndPlayerData::getArkTribe).toList();
             tribeAndPlayerData.getPlayerIdentifiers().forEach((playerId) -> {
                 try {
                     ArkProfile arkProfile = tribeAndPlayerData.getArkProfile(playerId);
@@ -75,4 +77,29 @@ public class TestGameStore {
             });
         }
     }
+
+    @Test
+    public void canHashAllGameObjectsUsingSha256() throws Exception {
+        try (ArkSaSaveDatabase arkSaSaveDatabase = new ArkSaSaveDatabase(TestConstants.TEST_SAVED_ARKS_FILE.toFile())) {
+            Set<UUID> allGameObjectUuids = arkSaSaveDatabase.getAllGameObjectUuids();
+            Instant start = Instant.now();
+            arkSaSaveDatabase.getHashOfObjects(allGameObjectUuids, HashUtils.defaultJvmHashAlgorithm("SHA-256"));
+            Instant end = Instant.now();
+            log.info("Hashed {} objects in {} ms using SHA-256", allGameObjectUuids.size(), end.toEpochMilli() - start.toEpochMilli());
+        }
+    }
+
+    @Test
+    public void canHashAllGameObjectsUsingXXHash() throws Exception {
+        try (ArkSaSaveDatabase arkSaSaveDatabase = new ArkSaSaveDatabase(TestConstants.TEST_SAVED_ARKS_FILE.toFile())) {
+            Set<UUID> allGameObjectUuids = arkSaSaveDatabase.getAllGameObjectUuids();
+            Instant start = Instant.now();
+            LongHashFunction xxHashFunction = LongHashFunction.xx3();
+            arkSaSaveDatabase.getHashOfObjects(allGameObjectUuids, xxHashFunction::hashBytes);
+            Instant end = Instant.now();
+
+            log.info("Hashed {} objects in {} ms using xxHash", allGameObjectUuids.size(), end.toEpochMilli() - start.toEpochMilli());
+        }
+    }
+
 }

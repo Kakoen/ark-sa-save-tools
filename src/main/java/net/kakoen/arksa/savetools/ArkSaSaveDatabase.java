@@ -3,6 +3,7 @@ package net.kakoen.arksa.savetools;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.kakoen.arksa.savetools.store.TribeAndPlayerData;
+import net.kakoen.arksa.savetools.utils.HashUtils;
 import net.kakoen.arksa.savetools.utils.JsonUtils;
 import org.sqlite.SQLiteConfig;
 
@@ -11,8 +12,24 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.*;
-import java.util.*;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Function;
 
 @Slf4j
 public class ArkSaSaveDatabase implements AutoCloseable {
@@ -282,6 +299,59 @@ public class ArkSaSaveDatabase implements AutoCloseable {
         return getGameObjectsByIds(Collections.singleton(uuid), GameObjectParserConfiguration.builder().throwExceptionOnParseError(true).build()).get(uuid);
     }
 
+    private <T> void hashObjects(Map<UUID, T> hashesById, Collection<UUID> gameObjectIds, Function<byte[], T> hashAlgorithm) {
+        if (gameObjectIds.isEmpty()) {
+            return;
+        }
+
+        String placeholders = String.join(",", Collections.nCopies(gameObjectIds.size(), "?"));
+        String query = "SELECT key, value FROM game WHERE key IN (" + placeholders + ")";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            // Set UUID parameters
+            int parameterIndex = 1;
+            for (UUID uuid : gameObjectIds) {
+                preparedStatement.setBytes(parameterIndex++, UUIDToByteArray(uuid));
+            }
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    UUID actualUuid = byteArrayToUUID(resultSet.getBytes("key"));
+                    byte[] valueBytes = resultSet.getBytes("value");
+                    hashesById.put(actualUuid, hashAlgorithm.apply(valueBytes));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Uses default SHA-256 to hash objects
+     */
+    public Map<UUID, byte[]> getHashOfObjects(Collection<UUID> gameObjectIds) {
+        try {
+            return getHashOfObjects(gameObjectIds, HashUtils.defaultJvmHashAlgorithm("SHA-256"));
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Get hash of objects with given UUID and a given hash algorithm, hash result will be of type T
+     * This can help in cases where you only want to retrieve modified game objects.
+     */
+    public <T> Map<UUID, T> getHashOfObjects(Collection<UUID> gameObjectIds, Function<byte[], T> hashAlgorithm) {
+        Map<UUID, T> hashesByIdResult = new HashMap<>();
+
+        List<UUID> uuidList = List.copyOf(gameObjectIds);
+        for (int i = 0; i < uuidList.size(); i += MAX_IN_LIST) {
+            hashObjects(hashesByIdResult, uuidList.subList(i, Math.min(i + MAX_IN_LIST, uuidList.size())), hashAlgorithm);
+        }
+
+        return hashesByIdResult;
+    }
+
     public static UUID byteArrayToUUID(final byte[] bytes) {
         ByteBuffer bb = ByteBuffer.wrap(bytes);
         long high = bb.getLong();
@@ -295,4 +365,7 @@ public class ArkSaSaveDatabase implements AutoCloseable {
         buf.putLong(uuid.getLeastSignificantBits());
         return buf.array();
     }
+
+
+
 }
