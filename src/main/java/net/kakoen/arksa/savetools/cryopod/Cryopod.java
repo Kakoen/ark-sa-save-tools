@@ -2,11 +2,13 @@ package net.kakoen.arksa.savetools.cryopod;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import net.kakoen.arksa.savetools.ArchiveType;
 import net.kakoen.arksa.savetools.ArkBinaryData;
 import net.kakoen.arksa.savetools.ArkGameObject;
 import net.kakoen.arksa.savetools.ArkPropertyContainer;
 import net.kakoen.arksa.savetools.ArkSaveUtils;
 import net.kakoen.arksa.savetools.GameObjectReaderConfiguration;
+import net.kakoen.arksa.savetools.ParseContext;
 import net.kakoen.arksa.savetools.SaveContext;
 import net.kakoen.arksa.savetools.utils.ByteListInputStream;
 import net.kakoen.arksa.savetools.utils.WildcardInflaterInputStream;
@@ -42,7 +44,7 @@ public class Cryopod {
         NAME_CONSTANTS.put(9, "ColorSetNames");
         NAME_CONSTANTS.put(10, "NameProperty");
         NAME_CONSTANTS.put(11, "TamingTeamID");
-        NAME_CONSTANTS.put(12, "UInt64Property"); //???
+        NAME_CONSTANTS.put(12, "ObjectProperty");
         NAME_CONSTANTS.put(13, "RequiredTameAffinity");
         NAME_CONSTANTS.put(14, "TamingTeamID");
         NAME_CONSTANTS.put(15, "IntProperty");
@@ -102,7 +104,8 @@ public class Cryopod {
 
     private void readHeaderDinoAndStatusComponent(InputStream rawInputStream, InputStream inflatedInputStream, GameObjectReaderConfiguration readerConfiguration) throws IOException {
         ArkBinaryData headerData = new ArkBinaryData(rawInputStream.readNBytes(12));
-        headerData.expect(0x0406, headerData.readInt());
+
+        int version = headerData.readInt();
         int inflatedSize = headerData.readInt(); //size of inflated data, before WildcardInflaterInputStream has been applied
         int namesOffset = headerData.readInt();
 
@@ -113,10 +116,13 @@ public class Cryopod {
             Files.write(readerConfiguration.getBinaryFilesOutputDirectory().resolve("cryopods").resolve(uuid + ".bytes0.bin"), inflatedData);
         }
 
-        readDinoAndStatusComponent(new ArkBinaryData(inflatedData), namesOffset);
+        ArkBinaryData inflatedDataReader = new ArkBinaryData(inflatedData);
+        inflatedDataReader.pushParseContext(new ParseContext(ArchiveType.CRYOPOD, version));
+        readDinoAndStatusComponent(inflatedDataReader, namesOffset);
     }
 
     private void readDinoAndStatusComponent(ArkBinaryData reader, int namesTableOffset) {
+
         SaveContext saveContext = reader.getSaveContext();
         saveContext.setNames(readNameTable(reader, namesTableOffset));
         saveContext.useConstantNameTable(NAME_CONSTANTS);
@@ -125,6 +131,11 @@ public class Cryopod {
         reader.setPosition(0);
 
         dinoAndStatusComponent = new ArrayList<>();
+
+        if (reader.currentParseContext().ge(ArchiveType.CRYOPOD, 0x0407)) {
+            reader.skipBytes(8);
+        }
+
         int objectCount = reader.readInt();
         for (int i = 0; i < objectCount; i++) {
             ArkGameObject gameObject = ArkGameObject.readFromCustomBytes(reader);
@@ -133,10 +144,11 @@ public class Cryopod {
 
         for (ArkGameObject gameObject : dinoAndStatusComponent) {
             try {
-                if (reader.getPosition() != gameObject.getPropertiesOffset()) {
-                    log.warn("Reader position {} does not match properties offset {}, bytes left to read: {}", reader.getPosition(), gameObject.getPropertiesOffset(), gameObject.getPropertiesOffset() - reader.getPosition());
-                    reader.setPosition(gameObject.getPropertiesOffset());
+                reader.setPosition(gameObject.getPropertiesOffset());
+                if (reader.currentParseContext().ge(ArchiveType.CRYOPOD, 0x0407) && reader.hasMore()) {
+                    reader.expect((byte) 0, reader.readByte());
                 }
+
                 gameObject.readProperties(reader);
                 gameObject.readExtraData(reader);
                 reader.readInt();
@@ -145,10 +157,11 @@ public class Cryopod {
                 ArkSaveUtils.enableDebugLogging = true;
                 reader.setPosition(gameObject.getPropertiesOffset());
                 gameObject.setProperties(new ArrayList<>());
+                if (reader.currentParseContext().useUE55Structure() && reader.hasMore()) {
+                    reader.expect((byte) 0, reader.readByte());
+                }
                 gameObject.readProperties(reader);
                 gameObject.readExtraData(reader);
-
-                //TODO respect parser configuration to decide whether to throw exception or not. Currently it always throws.
             } finally {
                 ArkSaveUtils.enableDebugLogging = false;
             }

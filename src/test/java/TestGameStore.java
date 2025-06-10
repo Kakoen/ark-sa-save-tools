@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
@@ -28,7 +27,6 @@ public class TestGameStore {
             tribeAndPlayerData.getPlayerIdentifiers().forEach((playerId) -> {
                 try {
                     ArkProfile arkProfile = tribeAndPlayerData.getArkProfile(playerId);
-                    log.info("player id {}", playerId);
                     JsonUtils.writeJsonToFile(arkProfile, TestConstants.TEST_OUTPUT_DIR.resolve("player-" + playerId.getEosId() + ".json"));
                 } catch (Exception e) {
                     Path debugFileOutputPath = TestConstants.TEST_OUTPUT_DIR.resolve("player-" + playerId.getEosId() + ".bin");
@@ -71,7 +69,7 @@ public class TestGameStore {
             arkSaSaveDatabase.getAllGameObjectUuids().parallelStream().forEach(uuid -> {
                 try {
                     arkSaSaveDatabase.getGameObjectById(uuid);
-                } catch (SQLException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });

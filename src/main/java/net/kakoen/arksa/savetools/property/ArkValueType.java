@@ -1,6 +1,7 @@
 package net.kakoen.arksa.savetools.property;
 
 import lombok.Getter;
+import net.kakoen.arksa.savetools.ArkGenericType;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -42,5 +43,9 @@ public enum ArkValueType {
             }
         }
         return null;
+    }
+
+    public static ArkValueType fromGenericType(ArkGenericType type) {
+        return fromName(type.getValue());
     }
 }

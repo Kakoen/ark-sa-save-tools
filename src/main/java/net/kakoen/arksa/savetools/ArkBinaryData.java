@@ -9,7 +9,9 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,8 @@ public class ArkBinaryData {
 
     @Getter
     private final SaveContext saveContext;
+
+    private Deque<ParseContext> parseContext = new ArrayDeque<>();
 
     public ArkBinaryData(byte[] data) {
         this.byteBuffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
@@ -71,6 +75,10 @@ public class ArkBinaryData {
 
     public boolean hasMore() {
         return byteBuffer.hasRemaining();
+    }
+
+    public int remaining() {
+        return byteBuffer.remaining();
     }
 
     public byte[] readBytes(int count) {
@@ -123,10 +131,13 @@ public class ArkBinaryData {
             setPosition(i);
             int intValue = readInt();
             String n = saveContext.getNames().get(intValue);
+            if (n == null && saveContext.hasConstantNameTable() && intValue != 0) {
+                n = saveContext.getConstantNameTable().get(intValue);
+            }
             if (n != null) {
                 found.add(n);
                 setPosition(i);
-                log.info("Found name: {} ({}) at {}", n, readBytesAsHex(4), i);
+                log.info("Found name: {} ({}) at 0x{} (hex)", n, readBytesAsHex(4), Integer.toHexString(i));
                 i += 3;
             }
         }
@@ -150,10 +161,12 @@ public class ArkBinaryData {
             return readString();
         }
         String name = saveContext.getName(readInt());
-        int alwaysZero = readInt();
-        if (alwaysZero != 0) {
-            ArkSaveUtils.debugLog("Always zero is not zero: {}", alwaysZero, new Throwable());
+        int identifier = readInt();
+
+        if (name != null && identifier != 0) {
+            return name + "_" + identifier;
         }
+
         return name;
     }
 
@@ -186,7 +199,7 @@ public class ArkBinaryData {
     }
 
     public void debugBinaryData(byte[] data) {
-        log.error("Data that was not recognized: " + bytesToHex(data));
+        log.error("Data that was not recognized ({} bytes): \n{}", data.length, ArkSaveUtils.getHexDump(data, 32));
         new ArkBinaryData(data, saveContext).findNames();
     }
 
@@ -211,7 +224,7 @@ public class ArkBinaryData {
 
     public void expect(Object expected, Object read) {
         if (!Objects.equals(expected, read)) {
-            log.warn("Unexpected data, expected {}, but was {}", expected, read, new Throwable());
+            log.warn("Unexpected data, expected {}, but was {} at {}", expected, read, getPosition(), new Throwable());
         }
     }
 
@@ -235,6 +248,7 @@ public class ArkBinaryData {
     public ArkValueType readValueTypeByName() {
         int position = getPosition();
         String keyTypeName = readName();
+
         ArkValueType keyType = ArkValueType.fromName(keyTypeName);
         if(keyType == null) throw new IllegalStateException("Unknown value type " + keyTypeName + " at position " + position);
         return keyType;
@@ -273,5 +287,56 @@ public class ArkBinaryData {
             name = readName();
         }
         return names;
+    }
+
+    public byte[] peekBytes(int i) {
+        int position = getPosition();
+        byte[] bytes = readBytes(i);
+        setPosition(position);
+        return bytes;
+    }
+
+    public void pushParseContext(ParseContext parseContext) {
+        this.parseContext.push(parseContext);
+    }
+
+    public ParseContext currentParseContext() {
+        return parseContext.peek();
+    }
+
+    public void popParseContext() {
+        this.parseContext.pop();
+    }
+
+    public ArkGenericType readArkGenericType() {
+        return readArkGenericTypes(1).getFirst();
+    }
+
+    public List<ArkGenericType> readArkGenericTypes(int count) {
+        List<ArkGenericType> result = new ArrayList<>();
+
+        for (int i = 0; i < count; i++) {
+            ArkGenericType type = new ArkGenericType();
+            type.setValue(readName());
+            int subTypes = readInt();
+            if(subTypes > 0) type.setSubTypes(readArkGenericTypes(subTypes));
+            result.add(type);
+        }
+
+        return result;
+    }
+
+    public List<String> readTypes() {
+        int readAnother = readInt();
+        List<String> result = new ArrayList<>();
+        while(readAnother > 0) {
+            result.add(readName());
+            readAnother = readInt();
+        }
+        return result;
+    }
+
+    public void initializeParseContext(SaveContext saveContext) {
+        parseContext.push(new ParseContext(ArchiveType.SAVE, saveContext.getSaveVersion()));
     }
 }

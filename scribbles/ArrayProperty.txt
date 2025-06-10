@@ -1,0 +1,67 @@
+Old
+1E 00 00 00 53 65 72 76 65 72 53 61 76 65 64 4C 61 73 74 44 65 61 74 68 4C 6F 63 61 74 69 6F 6E 73 00 <-- "ServerSavedLastDeathLocations"
+0E 00 00 00 41 72 72 61 79 50 72 6F 70 65 72 74 79 00 <-- "ArrayProperty"
+F2 00 00 00 <-- Data length
+00 00 00 00 <-- Position
+0F 00 00 00 53 74 72 75 63 74 50 72 6F 70 65 72 74 79 00 <-- StructProperty
+00 <-- Unknown byte
+
+--- Start of Data
+
+01 00 00 00 <-- Array Length
+1E 00 00 00 53 65 72 76 65 72 53 61 76 65 64 4C 61 73 74 44 65 61 74 68 4C 6F 63 61 74 69 6F 6E 73 00 <-- ServerSavedLastDeathLocations (again)
+0F 00 00 00 53 74 72 75 63 74 50 72 6F 70 65 72 74 79 00 <-- StructProperty
+8D 00 00 00 <-- Data length of StructProperty
+00 00 00 00 <-- Position
+0F 00 00 00 56 65 63 74 6F 72 42 6F 6F 6C 50 61 69 72 00 <-- VectorBoolPair (element type)
+00 <-- Unknown byte
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 (random 16 bytes that were always zero)
+    0A 00 00 00 56 65 63 74 6F 72 56 61 6C 00 <-- VectorVal
+    0F 00 00 00 53 74 72 75 63 74 50 72 6F 70 65 72 74 79 00 18 00 <-- StructProperty
+    00 00 00 00 00 00
+    07 00 00 00 56 65 63 74 6F 72 00 <-- Vector
+    00 <-- Unknown byte
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 <-- random 16 bytes that were always zero
+    39 02 7F AB CC 26 D1 40 4D F9 7D FD A1 BE 03 C1 C2 EF 3E B9 C7 9E D3 C0
+    08 00 00 00 42 6F 6F 6C 56 61 6C 00 <-- BoolVal
+    0D 00 00 00 42 6F 6F 6C 50 72 6F 70 65 72 74 79 00 <-- BoolProperty
+    00 00 00 00
+    00 00 00 00
+    01 00 <-- True
+    05 00 00 00 4E 6F 6E 65 00 <-- "None" (end of struct)
+
+
+
+New
+1E 00 00 00 53 65 72 76 65 72 53 61 76 65 64 4C 61 73 74 44 65 61 74 68 4C 6F 63 61 74 69 6F 6E 73 00 <-- "ServerSavedLastDeathLocations"
+0E 00 00 00 41 72 72 61 79 50 72 6F 70 65 72 74 79 00 <-- ArrayProperty (type)
+01 00 00 00
+0F 00 00 00 53 74 72 75 63 74 50 72 6F 70 65 72 74 79 00 <-- StructProperty (array of structs)
+01 00 00 00
+0F 00 00 00 56 65 63 74 6F 72 42 6F 6F 6C 50 61 69 72 00 <-- VectorBoolPair (element type)
+01 00 00 00
+14 00 00 00 2F 53 63 72 69 70 74 2F 53 68 6F 6F 74 65 72 47 61 6D 65 00 <-- /Script/ShooterGame (namespace)
+00 00 00 00
+A0 00 00 00 <-- Data length
+00 <-- Flags
+
+--- Start of Data
+
+01 00 00 00 <-- Array Length
+    0A 00 00 00 56 65 63 74 6F 72 56 61 6C 00 <-- "VectorVal"
+    0F 00 00 00 53 74 72 75 63 74 50 72 6F 70 65 72 74 79 00 <-- "StructProperty"
+    01 00 00 00
+    07 00 00 00 56 65 63 74 6F 72 00 <-- "Vector"
+    01 00 00 00
+    14 00 00 00 2F 53 63 72 69 70 74 2F 43 6F 72 65 55 4F 62 6A 65 63 74 00 <-- "/Script/CoreUObject"
+    00 00 00 00
+    18 00 00 00 <-- Data length
+    08 <-- Flags
+    39 02 7F AB CC 26 D1 40 4D F9 7D FD A1 BE 03 C1 C2 EF 3E B9 C7 9E D3 C0 <-- Vector data
+    08 00 00 00 42 6F 6F 6C 56 61 6C 00 <-- "BoolVal"
+    0D 00 00 00 42 6F 6F 6C 50 72 6F 70 65 72 74 79 00 <-- "BoolProperty"
+    00 00 00 00
+    00 00 00 00
+    10 <-- True (value)
+05 00 00 00 4E 6F 6E 65 00 <-- "None" (end of struct)
+
