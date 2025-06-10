@@ -70,11 +70,14 @@ public class ArkSaSaveDatabase implements AutoCloseable {
             return;
         }
         saveContext.setSaveVersion(headerData.readShort());
+
+        if (saveContext.getSaveVersion() >= 14) headerData.skipBytes(8); // Unknown data
+
         int nameTableOffset = headerData.readInt();
         saveContext.setGameTime(headerData.readDouble());
 
         if (saveContext.getSaveVersion() >= 12) {
-            saveContext.setUnknownValue(headerData.readUInt32());
+            headerData.skipBytes(4);
         }
 
         saveContext.setParts(readParts(headerData));
@@ -90,7 +93,7 @@ public class ArkSaSaveDatabase implements AutoCloseable {
         }
 
         if(headerData.getPosition() != nameTableOffset) {
-            log.warn("Name table offset does not match current position, skipping to offset. Unread bytes: {}", nameTableOffset - headerData.getPosition());
+            log.warn("Name table offset {} does not match current position {}, skipping to offset", nameTableOffset, headerData.getPosition());
             headerData.debugBinaryData(headerData.readBytes(nameTableOffset - headerData.getPosition()));
         }
 
@@ -152,6 +155,8 @@ public class ArkSaSaveDatabase implements AutoCloseable {
                 }
 
                 ArkBinaryData byteBuffer = new ArkBinaryData(resultSet.getBytes("value"), saveContext);
+                byteBuffer.pushParseContext(new ParseContext(ArchiveType.SAVE, saveContext.getSaveVersion()));
+
                 String className = byteBuffer.readName();
                 if (readerConfiguration.getBlueprintNameFilter() != null && !readerConfiguration.getBlueprintNameFilter().test(Optional.ofNullable(className))) {
                     continue;
@@ -277,6 +282,7 @@ public class ArkSaSaveDatabase implements AutoCloseable {
                 while (resultSet.next()) {
                     UUID actualUuid = byteArrayToUUID(resultSet.getBytes("key"));
                     ArkBinaryData byteBuffer = new ArkBinaryData(resultSet.getBytes("value"), saveContext);
+                    byteBuffer.pushParseContext(new ParseContext(ArchiveType.SAVE, saveContext.getSaveVersion()));
                     try {
                         String className = byteBuffer.readName();
                         gameObjects.put(actualUuid, new ArkGameObject(actualUuid, className, byteBuffer));
@@ -367,5 +373,18 @@ public class ArkSaSaveDatabase implements AutoCloseable {
     }
 
 
-
+    public byte[] getGameObjectRawById(UUID uuid) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT value FROM game WHERE key = ?")) {
+            preparedStatement.setBytes(1, UUIDToByteArray(uuid));
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getBytes("value");
+                } else {
+                    throw new IllegalArgumentException("No game object found with UUID: " + uuid);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to retrieve game object raw data for UUID: " + uuid, e);
+        }
+    }
 }

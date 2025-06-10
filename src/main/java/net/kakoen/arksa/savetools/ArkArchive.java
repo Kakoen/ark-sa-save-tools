@@ -1,6 +1,7 @@
 package net.kakoen.arksa.savetools;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Data
+@Slf4j
 public class ArkArchive {
 
     private List<ArkObject> objects = new ArrayList<>();
@@ -22,8 +24,14 @@ public class ArkArchive {
         int startPosition = data.getPosition();
 
         saveContext.setSaveVersion(data.readInt());
-        if(saveContext.getSaveVersion() < 5 || saveContext.getSaveVersion() > 6) {
+        data.pushParseContext(new ParseContext(ArchiveType.ARK_ARCHIVE, saveContext.getSaveVersion()));
+
+        if(saveContext.getSaveVersion() < 5 || saveContext.getSaveVersion() > 7) {
             throw new RuntimeException("Unsupported archive version " + saveContext.getSaveVersion());
+        }
+
+        if (saveContext.getSaveVersion() >= 7) {
+            data.skipBytes(8);
         }
 
         int count = data.readInt();
@@ -33,9 +41,11 @@ public class ArkArchive {
 
         for (ArkObject object : objects) {
             data.setPosition(startPosition + object.getPropertiesOffset());
+            if (saveContext.getSaveVersion() >= 7 && data.hasMore()) {
+                data.expect((byte)0, data.readByte());
+            }
             object.readProperties(data);
         }
-
     }
 
     public ArkObject getObjectByClass(String className) {

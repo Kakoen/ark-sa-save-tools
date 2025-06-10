@@ -20,4 +20,38 @@ public class ArkSaveUtils {
 		}
 		return sb.toString();
 	}
+
+	public static String getHexDump(byte[] data, int bytesPerLine) {
+		StringBuilder output = new StringBuilder();
+		int offset = 0;
+
+		while (offset < data.length) {
+			// Offset/address
+			output.append(String.format("%08X  ", offset));
+
+			StringBuilder hexPart = new StringBuilder();
+			StringBuilder asciiPart = new StringBuilder();
+
+			for (int i = 0; i < bytesPerLine; i++) {
+				if (offset + i < data.length) {
+					byte b = data[offset + i];
+					hexPart.append(String.format("%02X ", b));
+					if (i % 8 == 7) hexPart.append(" ");
+					asciiPart.append((b >= 32 && b <= 126) ? (char) b : '.');
+				} else {
+					hexPart.append("   ");
+					if (i % 8 == 7) hexPart.append(" ");
+					asciiPart.append(" ");
+				}
+			}
+
+			output.append(hexPart);
+			output.append(" |").append(asciiPart).append("|\n");
+
+			offset += bytesPerLine;
+		}
+
+		return output.toString();
+	}
+
 }

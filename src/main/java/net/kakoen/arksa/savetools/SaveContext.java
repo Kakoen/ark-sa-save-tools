@@ -1,6 +1,7 @@
 package net.kakoen.arksa.savetools;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import net.kakoen.arksa.savetools.struct.ActorTransform;
 
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Data
+@Slf4j
 public class SaveContext {
 
     private Map<Integer, String> names;
@@ -19,7 +21,6 @@ public class SaveContext {
     private int saveVersion;
     private double gameTime;
     private boolean generateUnknownNames;
-    private long unknownValue;
 
     public Optional<ActorTransform> getActorTransform(UUID uuid) {
         return Optional.ofNullable(actorTransforms.get(uuid));
@@ -36,7 +37,8 @@ public class SaveContext {
             return constantNameTable.get(key);
         } else {
             if (generateUnknownNames) {
-                String newName = "Unknown_" + key;
+                String hexValueOfKeyInLittleEndian = String.format("%08X", Integer.reverseBytes(key));
+                String newName = "Unknown_" + hexValueOfKeyInLittleEndian;
                 if(names != null) {
                     names.put(key, newName);
                 }
@@ -53,5 +55,9 @@ public class SaveContext {
 
     public boolean isReadNamesAsStrings() {
         return saveVersion >= 13;
+    }
+
+    public boolean hasConstantNameTable() {
+        return constantNameTable != null && !constantNameTable.isEmpty();
     }
 }
