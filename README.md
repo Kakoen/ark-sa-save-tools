@@ -92,6 +92,10 @@ try (ArkSaSaveDatabase arkSaSaveDatabase = new ArkSaSaveDatabase(TestConstants.T
 
 Reading Cryopod data is a bit more complex, but can be done. See `src/test/java/TestCryopods.java` for a starting point.
 
+## Using the library in your Java project
+
+From version 0.1.0, the library is published as a Maven package to Github packages. See https://github.com/Kakoen/ark-sa-save-tools/packages
+
 ## Help?
 
 My time is limited, so I might not be able to provide extended support for using this library. But you
