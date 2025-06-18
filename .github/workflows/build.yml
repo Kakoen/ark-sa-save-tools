@@ -26,5 +26,5 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew build
     - name: Publish SNAPSHOT Maven package
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/master'
       run: ./gradlew publish -PonlyPublishSnapshotVersion
