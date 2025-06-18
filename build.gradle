@@ -41,6 +41,10 @@ test {
     useJUnitPlatform()
 }
 
+jar {
+    archiveFileName.set("${project.name}.jar")
+}
+
 publishing {
     //For CI, we only want to publish when the version ends with SNAPSHOT; we don't want to overwrite releases
     def onlyPublishSnapshotVersion = rootProject.hasProperty('onlyPublishSnapshotVersion')

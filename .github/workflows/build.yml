@@ -25,11 +25,6 @@ jobs:
       run: chmod +x gradlew
     - name: Build with Gradle
       run: ./gradlew build
-    - name: Upload JAR
-      uses: actions/upload-artifact@v4
-      with:
-        name: ark-sa-save-tools.jar
-        path: ./build/libs/ark-sa-save-tools.jar
     - name: Publish SNAPSHOT Maven package
       if: github.ref == 'refs/heads/main'
       run: ./gradlew publish -PonlyPublishSnapshotVersion
