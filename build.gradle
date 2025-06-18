@@ -1,10 +1,10 @@
 plugins {
     id 'java-library'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'maven-publish'
 }
 
 group = 'net.kakoen.arksa'
-version = '1.0.0-SNAPSHOT'
+version = '0.1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -41,16 +41,25 @@ test {
     useJUnitPlatform()
 }
 
-//jar {
-//    finalizedBy shadowJar
-//    manifest {
-//        attributes 'Main-Class': 'net.kakoen.arksa.cli.SaveToolsCLI'
-//    }
-//}
+publishing {
+    //For CI, we only want to publish when the version ends with SNAPSHOT; we don't want to overwrite releases
+    def onlyPublishSnapshotVersion = rootProject.hasProperty('onlyPublishSnapshotVersion')
+    if(!onlyPublishSnapshotVersion || (onlyPublishSnapshotVersion && version.endsWith("-SNAPSHOT"))) {
+        publications {
+            asaSaveToolsLib(MavenPublication) {
+                from components.java
+            }
+        }
+    }
 
-shadowJar {
-    from 'simplelogger.properties'
-    archiveFileName.set("${project.name}.jar")
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = "https://maven.pkg.github.com/kakoen/ark-sa-save-tools"
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: "github"
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }
-
-jar.finalizedBy(shadowJar)

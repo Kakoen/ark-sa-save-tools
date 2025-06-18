@@ -30,4 +30,6 @@ jobs:
       with:
         name: ark-sa-save-tools.jar
         path: ./build/libs/ark-sa-save-tools.jar
-
+    - name: Publish SNAPSHOT Maven package
+      if: github.ref == 'refs/heads/main'
+      run: ./gradlew publish -PonlyPublishSnapshotVersion
