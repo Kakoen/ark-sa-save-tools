@@ -28,3 +28,5 @@ jobs:
     - name: Publish SNAPSHOT Maven package
       if: github.ref == 'refs/heads/master'
       run: ./gradlew publish -PonlyPublishSnapshotVersion
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
