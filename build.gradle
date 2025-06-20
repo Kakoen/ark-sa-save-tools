@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'net.kakoen.arksa'
-version = '0.0.32-SNAPSHOT'
+version = '0.0.32'
 
 repositories {
     mavenCentral()
