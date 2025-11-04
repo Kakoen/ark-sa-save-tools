@@ -22,11 +22,11 @@ java {
 dependencies {
     implementation group: 'org.slf4j', name: 'slf4j-simple', version: '2.0.17'
 
-    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
-    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
+    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
 
-    testCompileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
-    testAnnotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
+    testCompileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
+    testAnnotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
 
     implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.50.3.0'
 
