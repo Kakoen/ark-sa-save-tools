@@ -12,6 +12,7 @@ public enum ArkStructType {
     Vector("Vector", ArkVector::new),
     Rotator("Rotator", ArkRotator::new),
     UniqueNetIdRepl("UniqueNetIdRepl", ArkUniqueNetIdRepl::new),
+    Guid("Guid", ArkBinaryData::readUUID),
     Color("Color", ArkColor::new),
     IntPoint("IntPoint", IntPoint::new)
 
