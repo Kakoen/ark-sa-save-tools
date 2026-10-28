@@ -14,6 +14,7 @@ import net.kakoen.arksa.savetools.struct.UnknownStruct;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -142,7 +143,7 @@ public class ArkProperty<T> {
                     mapEntries.add(readLegacyMapProperty(keyType, byteBuffer));
                     continue;
                 }
-                String entryKey = readPropertyValue(keyType, byteBuffer).toString();
+                String entryKey = Objects.toString(readPropertyValue(keyType, byteBuffer), null);
                 Object entryValue = readPropertyValue(valueType, byteBuffer);
                 mapEntries.add(new ArkProperty<>(entryKey, valueType.asValueType().getName(), 0, entryValue));
             }
